@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* ===================== LIGHT MODE STYLES ===================== */
+.light-mode {
+  --bg-primary: #ffffff;
+  --text-primary: #111111;
+  --bg-secondary: #f5f5f5;
+}
+
+.light-mode body {
+  background-color: #ffffff;
+}
+
+/* Smooth transition for theme change */
+*:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Light mode overrides - EXCLUDE ANIMATION */
+.light-mode .bg-black:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background-color: #ffffff !important;
+}
+
+.light-mode .bg-gradient-to-br:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background: #f8f9fa !important;
+}
+
+.light-mode .text-white:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  color: #1a1a1a !important;
+}
+
+.light-mode .text-white\/80:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .text-white\/70:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .text-white\/60:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .text-white\/50:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .text-white\/40:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  color: #4a4a4a !important;
+}
+
+.light-mode .border-white\/10:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .border-white\/20:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+.light-mode .bg-gradient-to-br.from-gray-900:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .bg-gradient-to-br.from-gray-900.to-black:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background: #f0f0f0 !important;
+}
+
+.light-mode .ring-final-band:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .ring-outer:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background: #e0e0e0 !important;
+  border-color: #ccc !important;
+}
+
+.light-mode .box-closed-lid:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .box-open-lid:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .box-open-base:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background: #e8e8e8 !important;
+  border-color: #ccc !important;
+}
+
+.light-mode .box-cushion:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background: #d4d4d4 !important;
+}
+
+.light-mode .curtain-panel-left:not(.entrance-wrapper):not(.entrance-wrapper *),
+.light-mode .curtain-panel-right:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background: #e8e8e8 !important;
+}
+
+.light-mode footer:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background: #f5f5f5 !important;
+}
+
+.light-mode button.bg-white:not(.entrance-wrapper):not(.entrance-wrapper *) {
+  background-color: #000 !important;
+  color: #fff !important;
+}

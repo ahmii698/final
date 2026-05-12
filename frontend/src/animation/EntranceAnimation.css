@@ -1,0 +1,448 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===================== FORCE DARK THEME ===================== */
+.entrance-wrapper {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #000 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.entrance-wrapper * {
+  color-scheme: dark !important;
+}
+
+/* ===================== SPOTLIGHT BEAM ===================== */
+.spotlight-beam {
+  position: fixed;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 100vh;
+  background: radial-gradient(ellipse at top, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.12) 40%, transparent 80%);
+  pointer-events: none;
+  z-index: 1;
+  filter: blur(10px);
+}
+
+.spotlight-beam::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  height: 420px;
+  background: radial-gradient(ellipse at top, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.08) 50%, transparent 80%);
+  pointer-events: none;
+}
+
+/* ===================== CLOSED BOX ===================== */
+.box-closed {
+  position: relative;
+  width: 290px;
+  height: 265px;
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.95)) drop-shadow(0 10px 20px rgba(0,0,0,0.7));
+}
+
+.box-closed-lid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 290px;
+  height: 140px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.012) 0px,
+      rgba(255,255,255,0.012) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(160deg, #2e2e2e 0%, #1c1c1c 40%, #0e0e0e 100%);
+  border-radius: 5px 5px 0 0;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-bottom: none;
+  box-shadow:
+    0 -8px 30px rgba(0,0,0,0.8),
+    inset 0 1px 0 rgba(255,255,255,0.18),
+    inset 1px 0 0 rgba(255,255,255,0.06);
+}
+
+.box-closed-lid-top-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50px;
+  background: linear-gradient(170deg, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.1) 55%, transparent 100%);
+  border-radius: 5px 5px 0 0;
+  pointer-events: none;
+}
+
+.box-closed-lid-side-shine {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 65px;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0.18) 0%, transparent 100%);
+  border-radius: 5px 0 0 0;
+  pointer-events: none;
+}
+
+.box-closed-lid::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.2), rgba(255,255,255,0.05));
+}
+
+.box-closed-base {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 290px;
+  height: 130px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.01) 0px,
+      rgba(255,255,255,0.01) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(160deg, #252525 0%, #141414 50%, #080808 100%);
+  border-radius: 0 0 5px 5px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  box-shadow:
+    0 25px 55px rgba(0,0,0,0.95),
+    0 8px 20px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+}
+
+.box-hinge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 38px;
+  height: 8px;
+  background: linear-gradient(90deg, #333, #5a5a5a, #666, #5a5a5a, #333);
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  z-index: 2;
+}
+
+@keyframes boxAppear {
+  0% { opacity: 0; transform: scale(0.4) translateY(40px); }
+  60% { transform: scale(1.05) translateY(-5px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.animate-boxAppear {
+  animation: boxAppear 0.9s cubic-bezier(0.34, 1.3, 0.64, 1) forwards;
+}
+
+/* ===================== OPEN BOX ===================== */
+.box-open-wrapper {
+  position: relative;
+  width: 290px;
+  filter: drop-shadow(0 30px 60px rgba(0,0,0,0.95));
+}
+
+.box-open-lid {
+  width: 290px;
+  height: 135px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.012) 0px,
+      rgba(255,255,255,0.012) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(160deg, #2e2e2e 0%, #1c1c1c 40%, #0e0e0e 100%);
+  border-radius: 5px 5px 0 0;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-bottom: none;
+  position: relative;
+  transform-origin: bottom center;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.box-open-lid-static {
+  width: 290px;
+  height: 135px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.012) 0px,
+      rgba(255,255,255,0.012) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(160deg, #2e2e2e 0%, #1c1c1c 40%, #0e0e0e 100%);
+  border-radius: 5px 5px 0 0;
+  border: 1px solid rgba(255,255,255,0.22);
+  border-bottom: none;
+  position: relative;
+  transform: translateY(-28px) rotateX(-160deg);
+  transform-origin: bottom center;
+  opacity: 1;
+}
+
+.box-lid-inner-shine {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.1) 100%);
+  border-radius: 5px 5px 0 0;
+  pointer-events: none;
+}
+
+.box-lid-top-shine {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 45px;
+  background: linear-gradient(170deg, rgba(255,255,255,0.32) 0%, transparent 100%);
+  border-radius: 5px 5px 0 0;
+  pointer-events: none;
+}
+
+.box-open-base {
+  width: 290px;
+  height: 180px;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.01) 0px,
+      rgba(255,255,255,0.01) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    linear-gradient(160deg, #252525 0%, #141414 50%, #080808 100%);
+  border-radius: 0 0 5px 5px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  position: relative;
+  box-shadow: 0 25px 55px rgba(0,0,0,0.95), 0 8px 20px rgba(0,0,0,0.6);
+  overflow: hidden;
+}
+
+.box-base-shine {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 55px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+.box-cushion {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  height: 90px;
+  background: linear-gradient(160deg, #1e1e1e 0%, #141414 40%, #0a0a0a 100%);
+  border-radius: 5px 5px 3px 3px;
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow:
+    inset 0 3px 10px rgba(0,0,0,0.85),
+    inset 0 -2px 6px rgba(255,255,255,0.04),
+    0 2px 6px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+
+.box-cushion-fold {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40px;
+  background: linear-gradient(160deg, #2a2a2a 0%, #1d1d1d 40%, #111 100%);
+  border-bottom: 1px solid rgba(0,0,0,0.7);
+  border-radius: 5px 5px 0 0;
+}
+
+.box-cushion-slot {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 24px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.5) 100%);
+  border-radius: 50%;
+  box-shadow: inset 0 3px 8px rgba(0,0,0,1);
+}
+
+.box-cushion-shine {
+  position: absolute;
+  top: 0; left: 0;
+  width: 80px;
+  height: 40px;
+  background: linear-gradient(120deg, rgba(255,255,255,0.14) 0%, transparent 100%);
+  border-radius: 5px 0 0 0;
+  pointer-events: none;
+}
+
+.box-cushion-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 50px;
+  background: linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+}
+
+@keyframes lidOpen {
+  0% { transform: rotateX(0deg); opacity: 1; }
+  100% { transform: translateY(-28px) rotateX(-160deg); opacity: 1; }
+}
+.animate-lidOpen {
+  animation: lidOpen 1.4s ease-in-out forwards;
+  transform-style: preserve-3d;
+}
+
+/* ===================== RING - SIRF TERI IMAGE ===================== */
+.ring-rise-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.ring-3d {
+  position: relative;
+  width: 160px;
+  height: 160px;
+}
+
+/* SIRF TERI IMAGE - KUCH EXTRA NAHI */
+.ring-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: url('/images/5.png') !important;
+  background-size: contain !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  border: none;
+  box-shadow: none !important;
+}
+
+/* SAB KUCH HIDE - face, inner hole, shines, reflection, overlay */
+.ring-face,
+.ring-inner-hole,
+.ring-top-shine,
+.ring-top-shine-2,
+.ring-side-shine,
+.ring-bottom-shine,
+.ring-reflection,
+.ring-outer::before {
+  display: none !important;
+}
+
+/* Small ring variant */
+.ring-3d-small {
+  width: 130px;
+  height: 130px;
+}
+
+/* ===================== RING ANIMATIONS ===================== */
+@keyframes ringRise {
+  0% { transform: translate(-50%, -10%) scale(0.2); opacity: 0; }
+  25% { opacity: 1; }
+  55% { transform: translate(-50%, -158%) scale(1.1) rotate(-5deg); }
+  70% { transform: translate(-50%, -152%) scale(1.05) rotate(3deg); }
+  100% { transform: translate(-50%, -155%) scale(1) rotate(0deg); opacity: 1; }
+}
+.animate-ringRise {
+  animation: ringRise 2s cubic-bezier(0.34, 1.2, 0.64, 1) forwards;
+}
+
+@keyframes ringFall {
+  0% { transform: translateX(-50%) rotate(0deg) scale(1); opacity: 1; top: 30%; }
+  30% { transform: translateX(-53%) rotate(180deg) scale(0.92); }
+  65% { transform: translateX(-47%) rotate(390deg) scale(0.72); opacity: 0.5; top: 80%; }
+  100% { transform: translateX(-50%) rotate(520deg) scale(0.45); opacity: 0; top: 93%; }
+}
+.animate-ringFall {
+  animation: ringFall 2.2s ease-in forwards;
+  position: absolute;
+}
+
+/* ===================== CURTAINS ===================== */
+.curtain-panel {
+  position: relative;
+  overflow: hidden;
+}
+
+.curtain-panel-left {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.015) 0px,
+      rgba(255,255,255,0.015) 1px,
+      transparent 1px,
+      transparent 30px
+    ),
+    linear-gradient(90deg, #0e0e0e 0%, #1a1a1a 50%, #111 100%);
+  border-right: 1px solid rgba(255,255,255,0.22);
+}
+
+.curtain-panel-right {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.015) 0px,
+      rgba(255,255,255,0.015) 1px,
+      transparent 1px,
+      transparent 30px
+    ),
+    linear-gradient(270deg, #0e0e0e 0%, #1a1a1a 50%, #111 100%);
+  border-left: 1px solid rgba(255,255,255,0.22);
+}
+
+.curtain-edge {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg,
+    rgba(255,255,255,0.3),
+    rgba(255,255,255,0.1),
+    rgba(255,255,255,0.28)
+  );
+}
+.curtain-edge-right { right: 0; }
+.curtain-edge-left { left: 0; }
+
+.curtain-sheen {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 110px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.08) 0%, transparent 100%);
+  pointer-events: none;
+}
+.curtain-sheen-right {
+  left: auto; right: 0;
+  background: linear-gradient(270deg, rgba(255,255,255,0.08) 0%, transparent 100%);
+}
+
+@keyframes curtainLeft {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+@keyframes curtainRight {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+.curtain-left { animation: curtainLeft 2.5s cubic-bezier(0.76, 0, 0.24, 1) forwards; }
+.curtain-right { animation: curtainRight 2.5s cubic-bezier(0.76, 0, 0.24, 1) forwards; }
