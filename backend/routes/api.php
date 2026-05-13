@@ -163,6 +163,14 @@ Route::prefix('admin')->group(function () {
     Route::delete('/faqs/{id}', [AdminController::class, 'deleteFaq']);
     Route::get('/orders', [AdminController::class, 'getOrders']);
     Route::put('/orders/{id}/status', [AdminController::class, 'updateOrderStatus']);
+    
+    // ===================== CONTACT SUBMISSIONS (ADMIN) =====================
+    Route::get('/contact-submissions', [AdminController::class, 'getContactSubmissions']);
+    Route::put('/contact-submissions/{id}/read', [AdminController::class, 'markContactAsRead']);
+    Route::delete('/contact-submissions/{id}', [AdminController::class, 'deleteContactSubmission']);
+    
+    // ===================== CONTACT REPLY (EMAIL) =====================
+    Route::post('/contact-submissions/{id}/reply', [AdminController::class, 'replyToContact']);
 });
 
 // ===================== FRONTEND HERO API ROUTES =====================

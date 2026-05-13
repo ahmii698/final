@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
+use PHPMailer\PHPMailer\Exception;
 
 class AdminController extends Controller
 {
@@ -374,65 +377,65 @@ class AdminController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
-// ===================== ABOUT HERO =====================
-    
-public function getAboutHero(Request $request)
-{
-    $hero = DB::table('about_hero')->first();
-    return response()->json(['success' => true, 'data' => $hero]);
-}
 
-public function updateAboutHero(Request $request, $id)
-{
-    try {
-        $data = [];
-        
-        if ($request->has('title')) $data['title'] = $request->title;
-        if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
-        if ($request->has('active')) $data['active'] = $request->active;
-        
-        // Handle image upload
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_hero_' . $image->getClientOriginalName();
-            
-            if (!file_exists(public_path('uploads/about'))) {
-                mkdir(public_path('uploads/about'), 0777, true);
-            }
-            
-            $image->move(public_path('uploads/about'), $imageName);
-            $data['image'] = '/uploads/about/' . $imageName;
-            
-            // Delete old image if exists
-            $oldHero = DB::table('about_hero')->where('id', $id)->first();
-            if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
-                unlink(public_path($oldHero->image));
-            }
-        }
-        
-        unset($data['_method']);
-        
-        $exists = DB::table('about_hero')->where('id', $id)->exists();
-        
-        if ($exists) {
-            DB::table('about_hero')->where('id', $id)->update($data);
-        } else {
-            $data['id'] = $id;
-            DB::table('about_hero')->insert($data);
-        }
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'About Hero updated successfully'
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
+    // ===================== ABOUT HERO =====================
+    
+    public function getAboutHero(Request $request)
+    {
+        $hero = DB::table('about_hero')->first();
+        return response()->json(['success' => true, 'data' => $hero]);
     }
-}
+
+    public function updateAboutHero(Request $request, $id)
+    {
+        try {
+            $data = [];
+            
+            if ($request->has('title')) $data['title'] = $request->title;
+            if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
+            if ($request->has('active')) $data['active'] = $request->active;
+            
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imageName = time() . '_hero_' . $image->getClientOriginalName();
+                
+                if (!file_exists(public_path('uploads/about'))) {
+                    mkdir(public_path('uploads/about'), 0777, true);
+                }
+                
+                $image->move(public_path('uploads/about'), $imageName);
+                $data['image'] = '/uploads/about/' . $imageName;
+                
+                $oldHero = DB::table('about_hero')->where('id', $id)->first();
+                if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
+                    unlink(public_path($oldHero->image));
+                }
+            }
+            
+            unset($data['_method']);
+            
+            $exists = DB::table('about_hero')->where('id', $id)->exists();
+            
+            if ($exists) {
+                DB::table('about_hero')->where('id', $id)->update($data);
+            } else {
+                $data['id'] = $id;
+                DB::table('about_hero')->insert($data);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'About Hero updated successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     // ===================== ABOUT CTA =====================
     
     public function getAboutCta(Request $request)
@@ -486,489 +489,563 @@ public function updateAboutHero(Request $request, $id)
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
     // ===================== NEWSLETTER SUBSCRIBE =====================
     
-public function subscribeNewsletter(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email|unique:newsletter_subscribers,email',
-    ]);
+    public function subscribeNewsletter(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|unique:newsletter_subscribers,email',
+        ]);
 
-    $id = DB::table('newsletter_subscribers')->insertGetId([
-        'email' => $request->email,
-        'subscribed_at' => now(),
-        'is_active' => 1
-    ]);
+        $id = DB::table('newsletter_subscribers')->insertGetId([
+            'email' => $request->email,
+            'subscribed_at' => now(),
+            'is_active' => 1
+        ]);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Thank you for subscribing to our newsletter!'
-    ]);
-}
+        return response()->json([
+            'success' => true,
+            'message' => 'Thank you for subscribing to our newsletter!'
+        ]);
+    }
 
-// Get all subscribers (for admin)
-public function getSubscribers(Request $request)
-{
-    $subscribers = DB::table('newsletter_subscribers')
-        ->orderBy('subscribed_at', 'desc')
-        ->get();
-    
-    return response()->json([
-        'success' => true,
-        'data' => $subscribers
-    ]);
-}
-
-// Delete subscriber
-public function deleteSubscriber($id)
-{
-    DB::table('newsletter_subscribers')->where('id', $id)->delete();
-    
-    return response()->json([
-        'success' => true,
-        'message' => 'Subscriber removed successfully'
-    ]);
-}
-// ===================== SHOP HERO =====================
-public function getShopHero(Request $request)
-{
-    $hero = DB::table('shop_hero')->first();
-    return response()->json(['success' => true, 'data' => $hero]);
-}
-
-public function updateShopHero(Request $request, $id)
-{
-    try {
-        $data = [];
-        if ($request->has('title')) $data['title'] = $request->title;
-        if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
-        if ($request->has('active')) $data['active'] = $request->active;
+    public function getSubscribers(Request $request)
+    {
+        $subscribers = DB::table('newsletter_subscribers')
+            ->orderBy('subscribed_at', 'desc')
+            ->get();
         
-        if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_shop_' . $image->getClientOriginalName();
-            if (!file_exists(public_path('uploads/shop'))) mkdir(public_path('uploads/shop'), 0777, true);
-            $image->move(public_path('uploads/shop'), $imageName);
-            $data['image'] = '/uploads/shop/' . $imageName;
+        return response()->json([
+            'success' => true,
+            'data' => $subscribers
+        ]);
+    }
+
+    public function deleteSubscriber($id)
+    {
+        DB::table('newsletter_subscribers')->where('id', $id)->delete();
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Subscriber removed successfully'
+        ]);
+    }
+
+    // ===================== SHOP HERO =====================
+    
+    public function getShopHero(Request $request)
+    {
+        $hero = DB::table('shop_hero')->first();
+        return response()->json(['success' => true, 'data' => $hero]);
+    }
+
+    public function updateShopHero(Request $request, $id)
+    {
+        try {
+            $data = [];
+            if ($request->has('title')) $data['title'] = $request->title;
+            if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
+            if ($request->has('active')) $data['active'] = $request->active;
             
-            $oldHero = DB::table('shop_hero')->where('id', $id)->first();
-            if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
-                unlink(public_path($oldHero->image));
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imageName = time() . '_shop_' . $image->getClientOriginalName();
+                if (!file_exists(public_path('uploads/shop'))) mkdir(public_path('uploads/shop'), 0777, true);
+                $image->move(public_path('uploads/shop'), $imageName);
+                $data['image'] = '/uploads/shop/' . $imageName;
+                
+                $oldHero = DB::table('shop_hero')->where('id', $id)->first();
+                if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
+                    unlink(public_path($oldHero->image));
+                }
+            }
+            
+            unset($data['_method']);
+            $exists = DB::table('shop_hero')->where('id', $id)->exists();
+            if ($exists) {
+                DB::table('shop_hero')->where('id', $id)->update($data);
+            } else {
+                $data['id'] = $id;
+                DB::table('shop_hero')->insert($data);
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Shop Hero updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ===================== BLOG HERO =====================
+    
+    public function getBlogHero(Request $request)
+    {
+        $hero = DB::table('blog_hero')->first();
+        return response()->json(['success' => true, 'data' => $hero]);
+    }
+
+    public function updateBlogHero(Request $request, $id)
+    {
+        try {
+            $data = [];
+            if ($request->has('title')) $data['title'] = $request->title;
+            if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
+            if ($request->has('active')) $data['active'] = $request->active;
+            
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imageName = time() . '_blog_' . $image->getClientOriginalName();
+                if (!file_exists(public_path('uploads/blog'))) mkdir(public_path('uploads/blog'), 0777, true);
+                $image->move(public_path('uploads/blog'), $imageName);
+                $data['image'] = '/uploads/blog/' . $imageName;
+                
+                $oldHero = DB::table('blog_hero')->where('id', $id)->first();
+                if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
+                    unlink(public_path($oldHero->image));
+                }
+            }
+            
+            unset($data['_method']);
+            $exists = DB::table('blog_hero')->where('id', $id)->exists();
+            if ($exists) {
+                DB::table('blog_hero')->where('id', $id)->update($data);
+            } else {
+                $data['id'] = $id;
+                DB::table('blog_hero')->insert($data);
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Blog Hero updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ===================== CONTACT HERO =====================
+    
+    public function getContactHero(Request $request)
+    {
+        $hero = DB::table('contact_hero')->first();
+        return response()->json(['success' => true, 'data' => $hero]);
+    }
+
+    public function updateContactHero(Request $request, $id)
+    {
+        try {
+            $data = [];
+            if ($request->has('title')) $data['title'] = $request->title;
+            if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
+            if ($request->has('active')) $data['active'] = $request->active;
+            
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imageName = time() . '_contact_' . $image->getClientOriginalName();
+                if (!file_exists(public_path('uploads/contact'))) mkdir(public_path('uploads/contact'), 0777, true);
+                $image->move(public_path('uploads/contact'), $imageName);
+                $data['image'] = '/uploads/contact/' . $imageName;
+                
+                $oldHero = DB::table('contact_hero')->where('id', $id)->first();
+                if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
+                    unlink(public_path($oldHero->image));
+                }
+            }
+            
+            unset($data['_method']);
+            $exists = DB::table('contact_hero')->where('id', $id)->exists();
+            if ($exists) {
+                DB::table('contact_hero')->where('id', $id)->update($data);
+            } else {
+                $data['id'] = $id;
+                DB::table('contact_hero')->insert($data);
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Contact Hero updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ===================== TRACK ORDER HERO =====================
+    
+    public function getTrackHero(Request $request)
+    {
+        $hero = DB::table('track_hero')->first();
+        return response()->json(['success' => true, 'data' => $hero]);
+    }
+
+    public function updateTrackHero(Request $request, $id)
+    {
+        try {
+            $data = [];
+            if ($request->has('title')) $data['title'] = $request->title;
+            if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
+            if ($request->has('active')) $data['active'] = $request->active;
+            
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $imageName = time() . '_track_' . $image->getClientOriginalName();
+                if (!file_exists(public_path('uploads/track'))) mkdir(public_path('uploads/track'), 0777, true);
+                $image->move(public_path('uploads/track'), $imageName);
+                $data['image'] = '/uploads/track/' . $imageName;
+                
+                $oldHero = DB::table('track_hero')->where('id', $id)->first();
+                if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
+                    unlink(public_path($oldHero->image));
+                }
+            }
+            
+            unset($data['_method']);
+            $exists = DB::table('track_hero')->where('id', $id)->exists();
+            if ($exists) {
+                DB::table('track_hero')->where('id', $id)->update($data);
+            } else {
+                $data['id'] = $id;
+                DB::table('track_hero')->insert($data);
+            }
+            
+            return response()->json(['success' => true, 'message' => 'Track Hero updated successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ===================== ABOUT STATISTICS =====================
+    
+    public function getAboutStatistics(Request $request)
+    {
+        $statistics = DB::table('about_statistics')->orderBy('order')->get();
+        return response()->json(['success' => true, 'data' => $statistics]);
+    }
+
+    public function createAboutStatistic(Request $request)
+    {
+        $id = DB::table('about_statistics')->insertGetId($request->all());
+        return response()->json(['success' => true, 'data' => ['id' => $id]]);
+    }
+
+    public function updateAboutStatistic(Request $request, $id)
+    {
+        DB::table('about_statistics')->where('id', $id)->update($request->all());
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteAboutStatistic($id)
+    {
+        DB::table('about_statistics')->where('id', $id)->delete();
+        return response()->json(['success' => true]);
+    }
+
+    // ===================== ABOUT VALUES =====================
+    
+    public function getAboutValues(Request $request)
+    {
+        $values = DB::table('about_values')->orderBy('order')->get();
+        return response()->json(['success' => true, 'data' => $values]);
+    }
+
+    public function createAboutValue(Request $request)
+    {
+        $data = $request->all();
+        
+        if ($request->hasFile('icon')) {
+            $icon = $request->file('icon');
+            $iconName = time() . '_value_' . $icon->getClientOriginalName();
+            
+            if (!file_exists(public_path('uploads/values'))) {
+                mkdir(public_path('uploads/values'), 0777, true);
+            }
+            
+            $icon->move(public_path('uploads/values'), $iconName);
+            $data['icon'] = '/uploads/values/' . $iconName;
+        }
+        
+        unset($data['_method']);
+        
+        $id = DB::table('about_values')->insertGetId($data);
+        return response()->json(['success' => true, 'data' => ['id' => $id]]);
+    }
+
+    public function updateAboutValue(Request $request, $id)
+    {
+        $data = $request->all();
+        
+        if ($request->hasFile('icon')) {
+            $icon = $request->file('icon');
+            $iconName = time() . '_value_' . $icon->getClientOriginalName();
+            
+            if (!file_exists(public_path('uploads/values'))) {
+                mkdir(public_path('uploads/values'), 0777, true);
+            }
+            
+            $icon->move(public_path('uploads/values'), $iconName);
+            $data['icon'] = '/uploads/values/' . $iconName;
+            
+            $oldValue = DB::table('about_values')->where('id', $id)->first();
+            if ($oldValue && $oldValue->icon && file_exists(public_path($oldValue->icon))) {
+                unlink(public_path($oldValue->icon));
             }
         }
         
         unset($data['_method']);
-        $exists = DB::table('shop_hero')->where('id', $id)->exists();
-        if ($exists) {
-            DB::table('shop_hero')->where('id', $id)->update($data);
-        } else {
-            $data['id'] = $id;
-            DB::table('shop_hero')->insert($data);
+        
+        DB::table('about_values')->where('id', $id)->update($data);
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteAboutValue($id)
+    {
+        $value = DB::table('about_values')->where('id', $id)->first();
+        if ($value && $value->icon && file_exists(public_path($value->icon))) {
+            unlink(public_path($value->icon));
         }
         
-        return response()->json(['success' => true, 'message' => 'Shop Hero updated successfully']);
-    } catch (\Exception $e) {
-        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        DB::table('about_values')->where('id', $id)->delete();
+        return response()->json(['success' => true]);
     }
-}
 
-// ===================== BLOG HERO =====================
-public function getBlogHero(Request $request)
-{
-    $hero = DB::table('blog_hero')->first();
-    return response()->json(['success' => true, 'data' => $hero]);
-}
+    // ===================== BLOG POSTS CRUD =====================
+    
+    public function getBlogPosts(Request $request)
+    {
+        $posts = DB::table('blog_posts')->orderBy('created_at', 'desc')->get();
+        return response()->json(['success' => true, 'data' => $posts]);
+    }
 
-public function updateBlogHero(Request $request, $id)
-{
-    try {
-        $data = [];
-        if ($request->has('title')) $data['title'] = $request->title;
-        if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
-        if ($request->has('active')) $data['active'] = $request->active;
+    public function createBlogPost(Request $request)
+    {
+        $data = $request->all();
         
         if ($request->hasFile('image')) {
             $image = $request->file('image');
             $imageName = time() . '_blog_' . $image->getClientOriginalName();
-            if (!file_exists(public_path('uploads/blog'))) mkdir(public_path('uploads/blog'), 0777, true);
+            
+            if (!file_exists(public_path('uploads/blog'))) {
+                mkdir(public_path('uploads/blog'), 0777, true);
+            }
+            
+            $image->move(public_path('uploads/blog'), $imageName);
+            $data['image'] = '/uploads/blog/' . $imageName;
+        }
+        
+        if (empty($data['slug'])) {
+            $data['slug'] = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['title'])));
+        }
+        
+        unset($data['_method']);
+        
+        $id = DB::table('blog_posts')->insertGetId($data);
+        return response()->json(['success' => true, 'data' => ['id' => $id]]);
+    }
+
+    public function updateBlogPost(Request $request, $id)
+    {
+        $data = $request->all();
+        
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_blog_' . $image->getClientOriginalName();
+            
+            if (!file_exists(public_path('uploads/blog'))) {
+                mkdir(public_path('uploads/blog'), 0777, true);
+            }
+            
             $image->move(public_path('uploads/blog'), $imageName);
             $data['image'] = '/uploads/blog/' . $imageName;
             
-            $oldHero = DB::table('blog_hero')->where('id', $id)->first();
-            if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
-                unlink(public_path($oldHero->image));
+            $oldPost = DB::table('blog_posts')->where('id', $id)->first();
+            if ($oldPost && $oldPost->image && file_exists(public_path($oldPost->image))) {
+                unlink(public_path($oldPost->image));
             }
         }
         
-        unset($data['_method']);
-        $exists = DB::table('blog_hero')->where('id', $id)->exists();
-        if ($exists) {
-            DB::table('blog_hero')->where('id', $id)->update($data);
-        } else {
-            $data['id'] = $id;
-            DB::table('blog_hero')->insert($data);
+        if (empty($data['slug']) && !empty($data['title'])) {
+            $data['slug'] = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['title'])));
         }
         
-        return response()->json(['success' => true, 'message' => 'Blog Hero updated successfully']);
-    } catch (\Exception $e) {
-        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        unset($data['_method']);
+        
+        DB::table('blog_posts')->where('id', $id)->update($data);
+        return response()->json(['success' => true]);
     }
-}
 
-// ===================== CONTACT HERO =====================
-public function getContactHero(Request $request)
-{
-    $hero = DB::table('contact_hero')->first();
-    return response()->json(['success' => true, 'data' => $hero]);
-}
+    public function deleteBlogPost($id)
+    {
+        $post = DB::table('blog_posts')->where('id', $id)->first();
+        if ($post && $post->image && file_exists(public_path($post->image))) {
+            unlink(public_path($post->image));
+        }
+        
+        DB::table('blog_posts')->where('id', $id)->delete();
+        return response()->json(['success' => true]);
+    }
 
-public function updateContactHero(Request $request, $id)
-{
-    try {
-        $data = [];
-        if ($request->has('title')) $data['title'] = $request->title;
-        if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
-        if ($request->has('active')) $data['active'] = $request->active;
+    public function toggleFeaturedPost($id)
+    {
+        $post = DB::table('blog_posts')->where('id', $id)->first();
+        
+        if ($post) {
+            $newStatus = $post->is_featured ? 0 : 1;
+            
+            if ($newStatus == 1) {
+                DB::table('blog_posts')->update(['is_featured' => 0]);
+            }
+            
+            DB::table('blog_posts')->where('id', $id)->update(['is_featured' => $newStatus]);
+            
+            return response()->json(['success' => true, 'is_featured' => $newStatus]);
+        }
+        
+        return response()->json(['success' => false, 'message' => 'Post not found'], 404);
+    }
+
+    // ===================== CONTACT SUBMISSIONS =====================
+    
+    public function getContactSubmissions(Request $request)
+    {
+        $submissions = DB::table('contact_submissions')->orderBy('created_at', 'desc')->get();
+        return response()->json(['success' => true, 'data' => $submissions]);
+    }
+
+    public function markContactAsRead(Request $request, $id)
+    {
+        DB::table('contact_submissions')->where('id', $id)->update([
+            'is_read' => 1,
+            'updated_at' => now()
+        ]);
+        
+        return response()->json(['success' => true, 'message' => 'Marked as read']);
+    }
+
+    public function deleteContactSubmission($id)
+    {
+        DB::table('contact_submissions')->where('id', $id)->delete();
+        return response()->json(['success' => true, 'message' => 'Deleted successfully']);
+    }
+
+    // ===================== CONTACT REPLY (EMAIL) - FIXED =====================
+    
+    public function replyToContact(Request $request, $id)
+    {
+        try {
+            $submission = DB::table('contact_submissions')->where('id', $id)->first();
+            
+            if (!$submission) {
+                return response()->json(['success' => false, 'message' => 'Submission not found'], 404);
+            }
+            
+            $to = $request->to;
+            $subject = $request->subject;
+            $message = $request->message;
+            $customerName = $request->customer_name;
+            
+            $fullMessage = "Dear " . $customerName . ",\n\n";
+            $fullMessage .= $message . "\n\n";
+            $fullMessage .= "---\n";
+            $fullMessage .= "Best Regards,\n";
+            $fullMessage .= "LUXE Support Team\n";
+            $fullMessage .= "www.luxe.com";
+            
+            // Using PHPMailer
+            $mail = new PHPMailer(true);
+            
+            // Server settings
+            $mail->isSMTP();
+            $mail->Host = 'smtp.gmail.com';
+            $mail->SMTPAuth = true;
+            $mail->Username = 'xahmedmalik30600@gmail.com';
+            $mail->Password = 'eqjltztoeuatrvtk';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            $mail->Port = 465;
+            $mail->setFrom('xahmedmalik30600@gmail.com', 'LUXE Support');
+            $mail->addAddress($to, $customerName);
+            $mail->isHTML(false);
+            $mail->Subject = $subject;
+            $mail->Body = $fullMessage;
+            
+            $mail->send();
+            
+            // Mark as read when replied
+            DB::table('contact_submissions')->where('id', $id)->update([
+                'is_read' => 1,
+                'updated_at' => now()
+            ]);
+            
+            return response()->json(['success' => true, 'message' => 'Reply sent successfully']);
+            
+        } catch (Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Mailer Error: ' . $e->getMessage()], 500);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    // ===================== ABOUT TEAM =====================
+    
+    public function getAboutTeam(Request $request)
+    {
+        $team = DB::table('about_team')->orderBy('order')->get();
+        return response()->json(['success' => true, 'data' => $team]);
+    }
+
+    public function createAboutTeam(Request $request)
+    {
+        $data = $request->all();
         
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_contact_' . $image->getClientOriginalName();
-            if (!file_exists(public_path('uploads/contact'))) mkdir(public_path('uploads/contact'), 0777, true);
-            $image->move(public_path('uploads/contact'), $imageName);
-            $data['image'] = '/uploads/contact/' . $imageName;
+            $imageName = time() . '_team_' . $image->getClientOriginalName();
             
-            $oldHero = DB::table('contact_hero')->where('id', $id)->first();
-            if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
-                unlink(public_path($oldHero->image));
+            if (!file_exists(public_path('uploads/team'))) {
+                mkdir(public_path('uploads/team'), 0777, true);
             }
+            
+            $image->move(public_path('uploads/team'), $imageName);
+            $data['image'] = '/uploads/team/' . $imageName;
         }
         
         unset($data['_method']);
-        $exists = DB::table('contact_hero')->where('id', $id)->exists();
-        if ($exists) {
-            DB::table('contact_hero')->where('id', $id)->update($data);
-        } else {
-            $data['id'] = $id;
-            DB::table('contact_hero')->insert($data);
-        }
         
-        return response()->json(['success' => true, 'message' => 'Contact Hero updated successfully']);
-    } catch (\Exception $e) {
-        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        $id = DB::table('about_team')->insertGetId($data);
+        return response()->json(['success' => true, 'data' => ['id' => $id]]);
     }
-}
 
-// ===================== TRACK ORDER HERO =====================
-public function getTrackHero(Request $request)
-{
-    $hero = DB::table('track_hero')->first();
-    return response()->json(['success' => true, 'data' => $hero]);
-}
-
-public function updateTrackHero(Request $request, $id)
-{
-    try {
-        $data = [];
-        if ($request->has('title')) $data['title'] = $request->title;
-        if ($request->has('subtitle')) $data['subtitle'] = $request->subtitle;
-        if ($request->has('active')) $data['active'] = $request->active;
+    public function updateAboutTeam(Request $request, $id)
+    {
+        $data = $request->all();
         
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $imageName = time() . '_track_' . $image->getClientOriginalName();
-            if (!file_exists(public_path('uploads/track'))) mkdir(public_path('uploads/track'), 0777, true);
-            $image->move(public_path('uploads/track'), $imageName);
-            $data['image'] = '/uploads/track/' . $imageName;
+            $imageName = time() . '_team_' . $image->getClientOriginalName();
             
-            $oldHero = DB::table('track_hero')->where('id', $id)->first();
-            if ($oldHero && $oldHero->image && file_exists(public_path($oldHero->image))) {
-                unlink(public_path($oldHero->image));
+            if (!file_exists(public_path('uploads/team'))) {
+                mkdir(public_path('uploads/team'), 0777, true);
+            }
+            
+            $image->move(public_path('uploads/team'), $imageName);
+            $data['image'] = '/uploads/team/' . $imageName;
+            
+            $oldTeam = DB::table('about_team')->where('id', $id)->first();
+            if ($oldTeam && $oldTeam->image && file_exists(public_path($oldTeam->image))) {
+                unlink(public_path($oldTeam->image));
             }
         }
         
         unset($data['_method']);
-        $exists = DB::table('track_hero')->where('id', $id)->exists();
-        if ($exists) {
-            DB::table('track_hero')->where('id', $id)->update($data);
-        } else {
-            $data['id'] = $id;
-            DB::table('track_hero')->insert($data);
+        
+        DB::table('about_team')->where('id', $id)->update($data);
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteAboutTeam($id)
+    {
+        $team = DB::table('about_team')->where('id', $id)->first();
+        if ($team && $team->image && file_exists(public_path($team->image))) {
+            unlink(public_path($team->image));
         }
         
-        return response()->json(['success' => true, 'message' => 'Track Hero updated successfully']);
-    } catch (\Exception $e) {
-        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        DB::table('about_team')->where('id', $id)->delete();
+        return response()->json(['success' => true]);
     }
-}
-// ===================== ABOUT STATISTICS =====================
-    
-public function getAboutStatistics(Request $request)
-{
-    $statistics = DB::table('about_statistics')->orderBy('order')->get();
-    return response()->json(['success' => true, 'data' => $statistics]);
-}
 
-public function createAboutStatistic(Request $request)
-{
-    $id = DB::table('about_statistics')->insertGetId($request->all());
-    return response()->json(['success' => true, 'data' => ['id' => $id]]);
-}
-
-public function updateAboutStatistic(Request $request, $id)
-{
-    DB::table('about_statistics')->where('id', $id)->update($request->all());
-    return response()->json(['success' => true]);
-}
-
-public function deleteAboutStatistic($id)
-{
-    DB::table('about_statistics')->where('id', $id)->delete();
-    return response()->json(['success' => true]);
-}
-
-// ===================== ABOUT VALUES =====================
-    
-public function getAboutValues(Request $request)
-{
-    $values = DB::table('about_values')->orderBy('order')->get();
-    return response()->json(['success' => true, 'data' => $values]);
-}
-
-public function createAboutValue(Request $request)
-{
-    $data = $request->all();
-    
-    // Handle icon if uploaded as file
-    if ($request->hasFile('icon')) {
-        $icon = $request->file('icon');
-        $iconName = time() . '_value_' . $icon->getClientOriginalName();
-        
-        if (!file_exists(public_path('uploads/values'))) {
-            mkdir(public_path('uploads/values'), 0777, true);
-        }
-        
-        $icon->move(public_path('uploads/values'), $iconName);
-        $data['icon'] = '/uploads/values/' . $iconName;
-    }
-    
-    unset($data['_method']);
-    
-    $id = DB::table('about_values')->insertGetId($data);
-    return response()->json(['success' => true, 'data' => ['id' => $id]]);
-}
-
-public function updateAboutValue(Request $request, $id)
-{
-    $data = $request->all();
-    
-    // Handle icon if uploaded as file
-    if ($request->hasFile('icon')) {
-        $icon = $request->file('icon');
-        $iconName = time() . '_value_' . $icon->getClientOriginalName();
-        
-        if (!file_exists(public_path('uploads/values'))) {
-            mkdir(public_path('uploads/values'), 0777, true);
-        }
-        
-        $icon->move(public_path('uploads/values'), $iconName);
-        $data['icon'] = '/uploads/values/' . $iconName;
-        
-        // Delete old icon if exists
-        $oldValue = DB::table('about_values')->where('id', $id)->first();
-        if ($oldValue && $oldValue->icon && file_exists(public_path($oldValue->icon))) {
-            unlink(public_path($oldValue->icon));
-        }
-    }
-    
-    unset($data['_method']);
-    
-    DB::table('about_values')->where('id', $id)->update($data);
-    return response()->json(['success' => true]);
-}
-
-public function deleteAboutValue($id)
-{
-    $value = DB::table('about_values')->where('id', $id)->first();
-    if ($value && $value->icon && file_exists(public_path($value->icon))) {
-        unlink(public_path($value->icon));
-    }
-    
-    DB::table('about_values')->where('id', $id)->delete();
-    return response()->json(['success' => true]);
-}
-
-// ===================== BLOG POSTS CRUD =====================
-    
-public function getBlogPosts(Request $request)
-{
-    $posts = DB::table('blog_posts')->orderBy('created_at', 'desc')->get();
-    return response()->json(['success' => true, 'data' => $posts]);
-}
-
-public function createBlogPost(Request $request)
-{
-    $data = $request->all();
-    
-    // Handle image upload
-    if ($request->hasFile('image')) {
-        $image = $request->file('image');
-        $imageName = time() . '_blog_' . $image->getClientOriginalName();
-        
-        if (!file_exists(public_path('uploads/blog'))) {
-            mkdir(public_path('uploads/blog'), 0777, true);
-        }
-        
-        $image->move(public_path('uploads/blog'), $imageName);
-        $data['image'] = '/uploads/blog/' . $imageName;
-    }
-    
-    // Generate slug from title if not provided
-    if (empty($data['slug'])) {
-        $data['slug'] = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['title'])));
-    }
-    
-    unset($data['_method']);
-    
-    $id = DB::table('blog_posts')->insertGetId($data);
-    return response()->json(['success' => true, 'data' => ['id' => $id]]);
-}
-
-public function updateBlogPost(Request $request, $id)
-{
-    $data = $request->all();
-    
-    // Handle image upload
-    if ($request->hasFile('image')) {
-        $image = $request->file('image');
-        $imageName = time() . '_blog_' . $image->getClientOriginalName();
-        
-        if (!file_exists(public_path('uploads/blog'))) {
-            mkdir(public_path('uploads/blog'), 0777, true);
-        }
-        
-        $image->move(public_path('uploads/blog'), $imageName);
-        $data['image'] = '/uploads/blog/' . $imageName;
-        
-        // Delete old image
-        $oldPost = DB::table('blog_posts')->where('id', $id)->first();
-        if ($oldPost && $oldPost->image && file_exists(public_path($oldPost->image))) {
-            unlink(public_path($oldPost->image));
-        }
-    }
-    
-    // Generate slug from title if not provided
-    if (empty($data['slug']) && !empty($data['title'])) {
-        $data['slug'] = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $data['title'])));
-    }
-    
-    unset($data['_method']);
-    
-    DB::table('blog_posts')->where('id', $id)->update($data);
-    return response()->json(['success' => true]);
-}
-
-public function deleteBlogPost($id)
-{
-    $post = DB::table('blog_posts')->where('id', $id)->first();
-    if ($post && $post->image && file_exists(public_path($post->image))) {
-        unlink(public_path($post->image));
-    }
-    
-    DB::table('blog_posts')->where('id', $id)->delete();
-    return response()->json(['success' => true]);
-}
-
-public function toggleFeaturedPost($id)
-{
-    // First, get current featured status
-    $post = DB::table('blog_posts')->where('id', $id)->first();
-    
-    if ($post) {
-        $newStatus = $post->is_featured ? 0 : 1;
-        
-        // If making this post featured, remove featured from all others
-        if ($newStatus == 1) {
-            DB::table('blog_posts')->update(['is_featured' => 0]);
-        }
-        
-        DB::table('blog_posts')->where('id', $id)->update(['is_featured' => $newStatus]);
-        
-        return response()->json(['success' => true, 'is_featured' => $newStatus]);
-    }
-    
-    return response()->json(['success' => false, 'message' => 'Post not found'], 404);
-}
-
-// ===================== ABOUT TEAM =====================
-    
-public function getAboutTeam(Request $request)
-{
-    $team = DB::table('about_team')->orderBy('order')->get();
-    return response()->json(['success' => true, 'data' => $team]);
-}
-
-public function createAboutTeam(Request $request)
-{
-    $data = $request->all();
-    
-    // Handle image upload
-    if ($request->hasFile('image')) {
-        $image = $request->file('image');
-        $imageName = time() . '_team_' . $image->getClientOriginalName();
-        
-        if (!file_exists(public_path('uploads/team'))) {
-            mkdir(public_path('uploads/team'), 0777, true);
-        }
-        
-        $image->move(public_path('uploads/team'), $imageName);
-        $data['image'] = '/uploads/team/' . $imageName;
-    }
-    
-    unset($data['_method']);
-    
-    $id = DB::table('about_team')->insertGetId($data);
-    return response()->json(['success' => true, 'data' => ['id' => $id]]);
-}
-
-public function updateAboutTeam(Request $request, $id)
-{
-    $data = $request->all();
-    
-    // Handle image upload
-    if ($request->hasFile('image')) {
-        $image = $request->file('image');
-        $imageName = time() . '_team_' . $image->getClientOriginalName();
-        
-        if (!file_exists(public_path('uploads/team'))) {
-            mkdir(public_path('uploads/team'), 0777, true);
-        }
-        
-        $image->move(public_path('uploads/team'), $imageName);
-        $data['image'] = '/uploads/team/' . $imageName;
-        
-        // Delete old image if exists
-        $oldTeam = DB::table('about_team')->where('id', $id)->first();
-        if ($oldTeam && $oldTeam->image && file_exists(public_path($oldTeam->image))) {
-            unlink(public_path($oldTeam->image));
-        }
-    }
-    
-    unset($data['_method']);
-    
-    DB::table('about_team')->where('id', $id)->update($data);
-    return response()->json(['success' => true]);
-}
-
-public function deleteAboutTeam($id)
-{
-    $team = DB::table('about_team')->where('id', $id)->first();
-    if ($team && $team->image && file_exists(public_path($team->image))) {
-        unlink(public_path($team->image));
-    }
-    
-    DB::table('about_team')->where('id', $id)->delete();
-    return response()->json(['success' => true]);
-}
     // ===================== FEATURES CRUD =====================
     
     public function getFeatures(Request $request)
@@ -1185,15 +1262,13 @@ public function deleteAboutTeam($id)
         return response()->json(['success' => true]);
     }
 
-    // ===================== TESTIMONIAL SUBMIT & APPROVAL (UPDATED - NO STRICT VALIDATION) =====================
+    // ===================== TESTIMONIAL SUBMIT & APPROVAL =====================
     
-    // Submit testimonial from frontend (pending approval) - with relaxed validation
     public function submitTestimonial(Request $request)
     {
-        // Relaxed validation for better user experience
         $request->validate([
             'name' => 'required|string|max:255',
-            'text' => 'required|string|min:3',  // Changed from 10 to 3
+            'text' => 'required|string|min:3',
             'rating' => 'required|integer|min:1|max:5',
         ]);
 
@@ -1216,7 +1291,6 @@ public function deleteAboutTeam($id)
         ]);
     }
 
-    // Get pending testimonials for admin
     public function getPendingTestimonials(Request $request)
     {
         $testimonials = DB::table('testimonials')
@@ -1230,7 +1304,6 @@ public function deleteAboutTeam($id)
         ]);
     }
 
-    // Approve testimonial
     public function approveTestimonial($id)
     {
         DB::table('testimonials')->where('id', $id)->update([
@@ -1244,7 +1317,6 @@ public function deleteAboutTeam($id)
         ]);
     }
 
-    // Get all testimonials (active + pending for admin)
     public function getAllTestimonials(Request $request)
     {
         $testimonials = DB::table('testimonials')
@@ -1258,7 +1330,6 @@ public function deleteAboutTeam($id)
         ]);
     }
 
-    // Get only active testimonials for frontend
     public function getActiveTestimonials(Request $request)
     {
         $testimonials = DB::table('testimonials')
@@ -1272,7 +1343,6 @@ public function deleteAboutTeam($id)
         ]);
     }
 
-    // Reject/Delete testimonial
     public function rejectTestimonial($id)
     {
         DB::table('testimonials')->where('id', $id)->delete();

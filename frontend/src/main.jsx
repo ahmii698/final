@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';  // 👈 ADD THIS
+import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import App from './App';
 import About from './pages/About';
@@ -29,6 +29,7 @@ import AdminAboutTeam from './pages/Admin/AdminAboutTeam';
 import AdminAboutStatistics from './pages/Admin/AdminAboutStatistics';
 import AdminAboutValues from './pages/Admin/AdminAboutValues';
 import AdminBlogPosts from './pages/Admin/AdminBlogPosts';
+import AdminContactSubmissions from './pages/Admin/AdminContactSubmissions';  // 👈 ADD THIS
 import AdminShopHero from './pages/Admin/AdminShopHero';
 import AdminBlogHero from './pages/Admin/AdminBlogHero';
 import AdminContactHero from './pages/Admin/AdminContactHero';
@@ -41,8 +42,8 @@ import './index.css';
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>  {/* 👈 WRAP WITH AuthProvider FIRST */}
-        <CartProvider>  {/* 👈 THEN CartProvider */}
+      <AuthProvider>
+        <CartProvider>
           <Routes>
             {/* Frontend Routes */}
             <Route path="/" element={<App />} />
@@ -72,6 +73,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/admin/about-statistics" element={<AdminAboutStatistics />} />
             <Route path="/admin/about-values" element={<AdminAboutValues />} />
             <Route path="/admin/blog-posts" element={<AdminBlogPosts />} />
+            <Route path="/admin/contact-submissions" element={<AdminContactSubmissions />} />  {/* 👈 ADD THIS */}
             <Route path="/admin/shop-hero" element={<AdminShopHero />} />
             <Route path="/admin/blog-hero" element={<AdminBlogHero />} />
             <Route path="/admin/contact-hero" element={<AdminContactHero />} />
