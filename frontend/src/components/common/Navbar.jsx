@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';  // 👈 ADD THIS
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const { cartCount, wishlistCount } = useCart();
+  const { isAuthenticated, user, logout } = useAuth();  // 👈 ADD THIS
 
   // Load theme from localStorage on mount
   useEffect(() => {
@@ -23,6 +27,10 @@ function Navbar() {
       document.documentElement.classList.add('light-mode');
       localStorage.setItem('theme', 'light');
     }
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   const navLinks = [
@@ -90,34 +98,61 @@ function Navbar() {
               )}
             </button>
 
-            {/* Login/User Icon */}
-            <Link to="/auth" className="relative">
-              <svg className={`w-6 h-6 transition-colors duration-300 ${
-                isDarkMode ? 'text-white/70 hover:text-white' : 'text-gray-700 hover:text-gray-900'
-              }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </Link>
+            {/* User Section - Login/Logout */}
+            {isAuthenticated ? (
+              <div className="flex items-center gap-3">
+                <span className={`text-sm ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>
+                  Hi, {user?.name?.split(' ')[0]}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  className={`text-sm transition-colors duration-300 ${
+                    isDarkMode ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link to="/auth" className="relative">
+                <svg className={`w-6 h-6 transition-colors duration-300 ${
+                  isDarkMode ? 'text-white/70 hover:text-white' : 'text-gray-700 hover:text-gray-900'
+                }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </Link>
+            )}
 
-            {/* Heart/Wishlist Icon */}
+            {/* Heart/Wishlist Icon with Count */}
             <Link to="/wishlist" className="relative">
               <svg className={`w-6 h-6 transition-colors duration-300 ${
                 isDarkMode ? 'text-white/70 hover:text-white' : 'text-gray-700 hover:text-gray-900'
               }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
+              {wishlistCount > 0 && (
+                <span className={`absolute -top-2 -right-2 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
+                  isDarkMode ? 'bg-white text-black' : 'bg-black text-white'
+                } shadow-sm`}>
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
 
-            {/* Cart Icon */}
+            {/* Cart Icon with Count */}
             <Link to="/cart" className="relative">
               <svg className={`w-6 h-6 transition-colors duration-300 ${
                 isDarkMode ? 'text-white/70 hover:text-white' : 'text-gray-700 hover:text-gray-900'
               }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6M17 13l1.5 6M9 21h6M12 15v6" />
               </svg>
-              <span className="absolute -top-2 -right-2 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center bg-black text-white shadow-sm">
-                0
-              </span>
+              {cartCount > 0 && (
+                <span className={`absolute -top-2 -right-2 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ${
+                  isDarkMode ? 'bg-white text-black' : 'bg-black text-white'
+                } shadow-sm`}>
+                  {cartCount}
+                </span>
+              )}
             </Link>
 
             {/* Mobile menu button */}
@@ -157,6 +192,34 @@ function Navbar() {
                 {link.name}
               </Link>
             ))}
+            {/* Mobile menu auth links */}
+            {isAuthenticated ? (
+              <>
+                <div className={`pt-2 mt-2 border-t ${isDarkMode ? 'border-white/10' : 'border-gray-200'}`}>
+                  <span className={`block py-2 text-sm ${isDarkMode ? 'text-white/60' : 'text-gray-600'}`}>
+                    Hi, {user?.name}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className={`block py-2 w-full text-left transition-colors duration-300 ${
+                      isDarkMode ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Logout
+                  </button>
+                </div>
+              </>
+            ) : (
+              <Link
+                to="/auth"
+                onClick={() => setIsOpen(false)}
+                className={`block py-2 transition-colors duration-300 ${
+                  isDarkMode ? 'text-white/70 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Login / Sign Up
+              </Link>
+            )}
           </div>
         )}
       </div>

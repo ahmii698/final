@@ -7,5 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class ContactSubmission extends Model
 {
     protected $table = 'contact_submissions';
+    
     protected $fillable = ['name', 'email', 'subject', 'message', 'is_read'];
+    
+    // If you want to auto-set timestamps
+    public $timestamps = true;
 }

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 
@@ -8,33 +10,47 @@ function Auth() {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    password_confirmation: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { login, register } = useAuth();
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    let result;
     if (isLogin) {
-      alert('Login successful!');
+      result = await login(formData.email, formData.password);
     } else {
-      if (formData.password !== formData.confirmPassword) {
-        alert('Passwords do not match!');
+      if (formData.password !== formData.password_confirmation) {
+        setError('Passwords do not match');
+        setLoading(false);
         return;
       }
-      alert('Signup successful! Please login.');
-      setIsLogin(true);
+      result = await register(formData.name, formData.email, formData.password, formData.password_confirmation);
     }
+
+    if (result.success) {
+      // Redirect to previous page or home
+      const redirectTo = localStorage.getItem('redirectAfterLogin') || '/';
+      localStorage.removeItem('redirectAfterLogin');
+      navigate(redirectTo);
+    } else {
+      setError(result.message || 'Something went wrong');
+    }
+    setLoading(false);
   };
 
   return (
     <div className="min-h-screen bg-black">
       <Navbar />
-
+      
       {/* Hero Section */}
-      <section className="relative h-[30vh] flex items-center justify-center overflow-hidden">
+      <section className="relative h-[40vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <img src="/images/15.webp" alt="Auth Hero" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/60" />
@@ -44,7 +60,7 @@ function Auth() {
             {isLogin ? 'Welcome Back' : 'Create Account'}
           </h1>
           <p className="text-xl text-white/80 max-w-2xl mx-auto">
-            {isLogin ? 'Login to your account' : 'Sign up to get started'}
+            {isLogin ? 'Login to your account' : 'Sign up to start shopping'}
           </p>
           <div className="w-24 h-px bg-white/20 mx-auto mt-6" />
         </div>
@@ -52,84 +68,88 @@ function Auth() {
 
       {/* Auth Form */}
       <section className="py-16 px-4 max-w-md mx-auto">
-        <div className="bg-black rounded-2xl border border-white/10 p-8">
-          {/* Toggle Buttons */}
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={() => setIsLogin(true)}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                isLogin ? 'bg-white text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'
-              }`}
-            >
-              Login
-            </button>
-            <button
-              onClick={() => setIsLogin(false)}
-              className={`flex-1 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                !isLogin ? 'bg-white text-black' : 'bg-white/10 text-white/70 hover:bg-white/20'
-              }`}
-            >
-              Sign Up
-            </button>
-          </div>
-
+        <div className="bg-black rounded-xl border border-white/10 p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {!isLogin && (
-              <input
-                type="text"
-                name="name"
-                placeholder="Full Name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-xl px-5 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/40 focus:outline-none focus:border-gray-500 dark:focus:border-white/50"
-                required
-              />
+              <div>
+                <label className="block text-white/70 text-sm mb-1">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50"
+                  placeholder="Enter your name"
+                />
+              </div>
             )}
-            <input
-              type="email"
-              name="email"
-              placeholder="Email Address"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-xl px-5 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/40 focus:outline-none focus:border-gray-500 dark:focus:border-white/50"
-              required
-            />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-xl px-5 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/40 focus:outline-none focus:border-gray-500 dark:focus:border-white/50"
-              required
-            />
-            {!isLogin && (
+            
+            <div>
+              <label className="block text-white/70 text-sm mb-1">Email Address</label>
+              <input
+                type="email"
+                required
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50"
+                placeholder="Enter your email"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-white/70 text-sm mb-1">Password</label>
               <input
                 type="password"
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full bg-gray-100 dark:bg-white/5 border border-gray-300 dark:border-white/20 rounded-xl px-5 py-3 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-white/40 focus:outline-none focus:border-gray-500 dark:focus:border-white/50"
                 required
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50"
+                placeholder="Enter your password"
               />
+            </div>
+            
+            {!isLogin && (
+              <div>
+                <label className="block text-white/70 text-sm mb-1">Confirm Password</label>
+                <input
+                  type="password"
+                  required
+                  value={formData.password_confirmation}
+                  onChange={(e) => setFormData({...formData, password_confirmation: e.target.value})}
+                  className="w-full bg-white/5 border border-white/20 rounded-xl px-5 py-3 text-white placeholder-white/40 focus:outline-none focus:border-white/50"
+                  placeholder="Confirm your password"
+                />
+              </div>
             )}
+            
+            {error && (
+              <p className="text-red-500 text-sm text-center">{error}</p>
+            )}
+            
             <button
               type="submit"
-              className="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-black rounded-xl font-semibold hover:bg-gray-700 dark:hover:bg-gray-200 transition-all hover:scale-105"
+              disabled={loading}
+              className="w-full py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all disabled:opacity-50"
             >
-              {isLogin ? 'Login' : 'Sign Up'}
+              {loading ? 'Processing...' : (isLogin ? 'Login' : 'Sign Up')}
             </button>
           </form>
-
-          {isLogin && (
-            <p className="text-center text-white/40 text-sm mt-6">
-              <a href="#" className="hover:text-white">Forgot password?</a>
-            </p>
-          )}
+          
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError('');
+                setFormData({ name: '', email: '', password: '', password_confirmation: '' });
+              }}
+              className="text-white/50 hover:text-white text-sm"
+            >
+              {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
+            </button>
+          </div>
         </div>
       </section>
-
+      
       <Footer />
     </div>
   );

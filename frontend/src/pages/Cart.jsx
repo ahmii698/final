@@ -1,30 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
+import { useCart } from '../context/CartContext';
 
-// Sample cart items
-const initialCartItems = [
-  { id: 1, name: 'Tungsten Carbide Ring', price: 299, oldPrice: 499, image: '/images/122.webp', quantity: 1, size: 'US 10' },
-  { id: 2, name: "Men's Silver Chain", price: 199, oldPrice: 349, image: '/images/121.webp', quantity: 1, size: '22"', color: 'Silver' },
-];
+const BASE_URL = 'http://127.0.0.1:8000';
 
 function Cart() {
-  const [cartItems, setCartItems] = useState(initialCartItems);
+  const { cartItems, removeFromCart, updateQuantity } = useCart();
+  const [mounted, setMounted] = useState(false);
 
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity < 1) return;
-    setCartItems(items => items.map(item =>
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    ));
-  };
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const removeItem = (id) => {
-    setCartItems(items => items.filter(item => item.id !== id));
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${BASE_URL}${imagePath}`;
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shipping = 10;
+  const shipping = 0;  // ← FREE SHIPPING
   const total = subtotal + shipping;
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-black">
@@ -54,9 +54,9 @@ function Cart() {
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Your cart is empty</h3>
             <p className="text-white/50 mb-6">Looks like you haven't added any items yet.</p>
-            <a href="/shop" className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all hover:scale-105 inline-block">
+            <Link to="/shop" className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all hover:scale-105 inline-block">
               Continue Shopping
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
@@ -64,36 +64,73 @@ function Cart() {
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
                 <div key={item.id} className="bg-black rounded-xl border border-white/10 p-4 flex gap-4">
-                  <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-lg" />
+                  <img 
+                    src={getImageUrl(item.image)} 
+                    alt={item.name} 
+                    className="w-24 h-24 object-cover rounded-lg"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/100x100?text=No+Image';
+                    }}
+                  />
                   <div className="flex-1">
                     <h3 className="text-white font-semibold">{item.name}</h3>
                     <p className="text-white/40 text-sm">Price: ${item.price}</p>
                     {item.size && <p className="text-white/40 text-sm">Size: {item.size}</p>}
                     <div className="flex items-center gap-3 mt-2">
-                      <button onClick={() => updateQuantity(item.id, item.quantity - 1)} className="w-8 h-8 rounded-full bg-white/10 text-white hover:bg-white/20">-</button>
+                      <button 
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)} 
+                        className="w-8 h-8 rounded-full bg-white/10 text-white hover:bg-white/20"
+                      >
+                        -
+                      </button>
                       <span className="text-white">{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 rounded-full bg-white/10 text-white hover:bg-white/20">+</button>
-                      <button onClick={() => removeItem(item.id)} className="ml-auto text-red-500 text-sm hover:text-red-400">Remove</button>
+                      <button 
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)} 
+                        className="w-8 h-8 rounded-full bg-white/10 text-white hover:bg-white/20"
+                      >
+                        +
+                      </button>
+                      <button 
+                        onClick={() => removeFromCart(item.id)} 
+                        className="ml-auto text-red-500 text-sm hover:text-red-400"
+                      >
+                        Remove
+                      </button>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-white font-bold">${item.price * item.quantity}</p>
-                    {item.oldPrice && <p className="text-white/40 line-through text-sm">${item.oldPrice}</p>}
+                    <p className="text-white font-bold">${(item.price * item.quantity).toFixed(2)}</p>
+                    {item.oldPrice && (
+                      <p className="text-white/40 line-through text-sm">${item.oldPrice}</p>
+                    )}
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Order Summary */}
-            <div className="bg-black rounded-xl border border-white/10 p-6 h-fit">
+            {/* Order Summary - Free Shipping */}
+            <div className="bg-black rounded-xl border border-white/10 p-6 h-fit sticky top-24">
               <h3 className="text-xl font-bold text-white mb-4">Order Summary</h3>
               <div className="space-y-3 pb-4 border-b border-white/10">
-                <div className="flex justify-between"><span className="text-white/60">Subtotal</span><span className="text-white">${subtotal.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span className="text-white/60">Shipping</span><span className="text-white">${shipping.toFixed(2)}</span></div>
+                <div className="flex justify-between">
+                  <span className="text-white/60">Subtotal</span>
+                  <span className="text-white">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-white/60">Shipping</span>
+                  <span className="text-white text-green-500">FREE</span>
+                </div>
               </div>
-              <div className="flex justify-between mt-4 pb-4 border-b border-white/10"><span className="text-white font-semibold">Total</span><span className="text-white font-bold text-xl">${total.toFixed(2)}</span></div>
-              <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all hover:scale-105">Proceed to Checkout</button>
-              <a href="/shop" className="block text-center mt-4 text-white/50 text-sm hover:text-white">Continue Shopping →</a>
+              <div className="flex justify-between mt-4 pb-4">
+                <span className="text-white font-semibold">Total</span>
+                <span className="text-white font-bold text-xl">${total.toFixed(2)}</span>
+              </div>
+              <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all hover:scale-105">
+                Proceed to Checkout
+              </button>
+              <Link to="/shop" className="block text-center mt-4 text-white/50 text-sm hover:text-white">
+                Continue Shopping →
+              </Link>
             </div>
           </div>
         )}

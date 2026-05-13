@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 
-const API_URL = 'http://127.0.0.1:8000/api';
-const BASE_URL = 'http://127.0.0.1:8000';
+const API_URL = 'http://localhost:8000/api';  // ← CHANGE THIS
+const BASE_URL = 'http://localhost:8000';      // ← CHANGE THIS
 
 function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
@@ -81,6 +81,7 @@ function Contact() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify(formData),
       });
@@ -91,7 +92,7 @@ function Contact() {
         alert('Message sent! We will get back to you soon.');
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
-        alert('Something went wrong. Please try again.');
+        alert(result.message || 'Something went wrong. Please try again.');
       }
     } catch (error) {
       console.error('Error submitting form:', error);
