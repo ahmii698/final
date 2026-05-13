@@ -49,20 +49,21 @@ function AdminDashboard() {
       <div className="p-6">
         <h1 className="text-3xl font-bold text-white mb-6">Dashboard</h1>
         
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 border border-white/10">
+          <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all">
             <div className="text-3xl font-bold text-white mb-2">{stats.totalProducts}</div>
             <div className="text-white/50 text-sm">Total Products</div>
           </div>
-          <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 border border-white/10">
+          <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all">
             <div className="text-3xl font-bold text-white mb-2">{stats.totalOrders}</div>
             <div className="text-white/50 text-sm">Total Orders</div>
           </div>
-          <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 border border-white/10">
+          <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all">
             <div className="text-3xl font-bold text-white mb-2">{stats.totalUsers}</div>
-            <div className="text-white/50 text-sm">Total Users</div>
+            <div className="text-white/50 text-sm">Total Clients</div>
           </div>
-          <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 border border-white/10">
+          <div className="bg-gradient-to-br from-gray-900 to-black rounded-xl p-6 border border-white/10 hover:border-white/20 transition-all">
             <div className="text-3xl font-bold text-white mb-2">${stats.totalRevenue}</div>
             <div className="text-white/50 text-sm">Total Revenue</div>
           </div>

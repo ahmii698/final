@@ -108,7 +108,8 @@ class AdminController extends Controller
         try {
             $totalProducts = DB::table('products')->count();
             $totalOrders = DB::table('orders')->count();
-            $totalUsers = DB::table('users')->count();
+            // FIXED: Use clients table instead of users
+            $totalUsers = DB::table('clients')->count();
             $totalRevenue = DB::table('orders')->sum('total') ?? 0;
         } catch (\Exception $e) {
             $totalProducts = 0;
@@ -126,6 +127,28 @@ class AdminController extends Controller
                 'totalRevenue' => $totalRevenue
             ]
         ]);
+    }
+
+    // ===================== RECENT CLIENTS =====================
+    
+    public function getRecentClients(Request $request)
+    {
+        try {
+            $clients = DB::table('clients')
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
+            
+            return response()->json([
+                'success' => true,
+                'data' => $clients
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     // ===================== PRODUCTS CRUD WITH IMAGE UPLOAD =====================
@@ -976,7 +999,52 @@ class AdminController extends Controller
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
+    }// ===================== BLOG FEATURED =====================
+    
+public function getBlogFeatured(Request $request)
+{
+    $featured = DB::table('blog_featured')->first();
+    return response()->json(['success' => true, 'data' => $featured]);
+}
+
+public function updateBlogFeatured(Request $request, $id)
+{
+    try {
+        $data = [];
+        if ($request->has('title')) $data['title'] = $request->title;
+        if ($request->has('excerpt')) $data['excerpt'] = $request->excerpt;
+        if ($request->has('date')) $data['date'] = $request->date;
+        if ($request->has('read_time')) $data['read_time'] = $request->read_time;
+        if ($request->has('link')) $data['link'] = $request->link;
+        if ($request->has('active')) $data['active'] = $request->active;
+        
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $imageName = time() . '_featured_' . $image->getClientOriginalName();
+            if (!file_exists(public_path('uploads/blog'))) mkdir(public_path('uploads/blog'), 0777, true);
+            $image->move(public_path('uploads/blog'), $imageName);
+            $data['image'] = '/uploads/blog/' . $imageName;
+            
+            $oldFeatured = DB::table('blog_featured')->where('id', $id)->first();
+            if ($oldFeatured && $oldFeatured->image && file_exists(public_path($oldFeatured->image))) {
+                unlink(public_path($oldFeatured->image));
+            }
+        }
+        
+        unset($data['_method']);
+        $exists = DB::table('blog_featured')->where('id', $id)->exists();
+        if ($exists) {
+            DB::table('blog_featured')->where('id', $id)->update($data);
+        } else {
+            $data['id'] = $id;
+            DB::table('blog_featured')->insert($data);
+        }
+        
+        return response()->json(['success' => true, 'message' => 'Featured post updated successfully']);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
+}
 
     // ===================== ABOUT TEAM =====================
     

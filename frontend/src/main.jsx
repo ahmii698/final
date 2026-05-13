@@ -29,7 +29,8 @@ import AdminAboutTeam from './pages/Admin/AdminAboutTeam';
 import AdminAboutStatistics from './pages/Admin/AdminAboutStatistics';
 import AdminAboutValues from './pages/Admin/AdminAboutValues';
 import AdminBlogPosts from './pages/Admin/AdminBlogPosts';
-import AdminContactSubmissions from './pages/Admin/AdminContactSubmissions';  // 👈 ADD THIS
+import AdminBlogFeatured from './pages/Admin/AdminBlogFeatured';  // 👈 ADD THIS
+import AdminContactSubmissions from './pages/Admin/AdminContactSubmissions';
 import AdminShopHero from './pages/Admin/AdminShopHero';
 import AdminBlogHero from './pages/Admin/AdminBlogHero';
 import AdminContactHero from './pages/Admin/AdminContactHero';
@@ -73,7 +74,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/admin/about-statistics" element={<AdminAboutStatistics />} />
             <Route path="/admin/about-values" element={<AdminAboutValues />} />
             <Route path="/admin/blog-posts" element={<AdminBlogPosts />} />
-            <Route path="/admin/contact-submissions" element={<AdminContactSubmissions />} />  {/* 👈 ADD THIS */}
+            <Route path="/admin/blog-featured" element={<AdminBlogFeatured />} />  {/* 👈 ADD THIS */}
+            <Route path="/admin/contact-submissions" element={<AdminContactSubmissions />} />
             <Route path="/admin/shop-hero" element={<AdminShopHero />} />
             <Route path="/admin/blog-hero" element={<AdminBlogHero />} />
             <Route path="/admin/contact-hero" element={<AdminContactHero />} />

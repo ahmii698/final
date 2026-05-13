@@ -300,7 +300,7 @@ function Home() {
     <div className="min-h-screen bg-black">
       <Navbar />
 
-      {/* Hero Slider */}
+      {/* Hero Slider - Fixed Banner Images */}
       <section className="relative h-screen overflow-hidden">
         {displayBanners.map((banner, index) => (
           <div
@@ -309,36 +309,68 @@ function Home() {
               index === currentBanner ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
           >
+            {/* Background Image - Properly sized */}
+            <div className="absolute inset-0 w-full h-full">
+              <img
+                src={banner.image}
+                alt={banner.title}
+                className="w-full h-full object-cover object-center"
+                style={{
+                  objectFit: 'cover',
+                  objectPosition: 'center center'
+                }}
+                onError={(e) => {
+                  console.error('Image failed to load:', banner.image);
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
+            {/* Dark Overlay */}
             <div className="absolute inset-0 bg-black/40 z-10" />
-            <img
-              src={banner.image}
-              alt={banner.title}
-              className="w-full h-full object-contain md:object-cover"
-              onError={(e) => e.target.style.display = 'none'}
-            />
+            {/* Content */}
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">
-              <h1 className="animate-fadeInUp text-white text-5xl md:text-7xl font-bold mb-4 tracking-wider shadow-text">
+              <h1 className="animate-fadeInUp text-white text-5xl md:text-7xl font-bold mb-4 tracking-wider drop-shadow-lg">
                 {banner.title}
               </h1>
-              <p className="animate-fadeInUp animation-delay-200 text-white text-xl md:text-2xl max-w-2xl mb-8 shadow-text">
+              <p className="animate-fadeInUp animation-delay-200 text-white text-xl md:text-2xl max-w-2xl mb-8 drop-shadow">
                 {banner.subtitle}
               </p>
-              <button className="animate-fadeInUp animation-delay-400 bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 transition-all">
+              <button className="animate-fadeInUp animation-delay-400 bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 transition-all duration-300 hover:bg-gray-100">
                 {banner.button_text || 'Shop Now'}
               </button>
             </div>
           </div>
         ))}
+        
+        {/* Slider Controls */}
         {displayBanners.length > 0 && (
           <>
-            <button onClick={prevBanner} className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70">‹</button>
-            <button onClick={nextBanner} className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70">›</button>
+            <button 
+              onClick={prevBanner} 
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button 
+              onClick={nextBanner} 
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/50 text-white hover:bg-black/70 transition-all flex items-center justify-center"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            
+            {/* Dots */}
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 flex gap-2">
               {displayBanners.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => goToBanner(index)}
-                  className={`h-1 rounded-full transition-all ${index === currentBanner ? 'w-8 bg-white' : 'w-4 bg-white/30'}`}
+                  className={`h-1 rounded-full transition-all duration-300 ${
+                    index === currentBanner ? 'w-8 bg-white' : 'w-4 bg-white/30 hover:w-6 hover:bg-white/50'
+                  }`}
                 />
               ))}
             </div>
@@ -360,17 +392,31 @@ function Home() {
         </div>
       </section>
 
-      {/* Solo Banner */}
+      {/* Solo Banner - Fixed */}
       {soloBanner && (
         <section className="relative py-24 px-4 overflow-hidden min-h-[500px] flex items-center justify-center">
           <div className="absolute inset-0">
-            <img src={soloBanner.image} alt={soloBanner.title} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 w-full h-full">
+              <img 
+                src={soloBanner.image} 
+                alt={soloBanner.title} 
+                className="w-full h-full object-cover object-center"
+                style={{
+                  objectFit: 'cover',
+                  objectPosition: 'center center'
+                }}
+                onError={(e) => {
+                  console.error('Solo banner image failed to load:', soloBanner.image);
+                  e.target.style.display = 'none';
+                }}
+              />
+            </div>
             <div className="absolute inset-0 bg-black/60" />
           </div>
           <div className="relative z-10 text-center max-w-4xl mx-auto">
-            <h2 className="text-white text-4xl md:text-5xl font-bold mb-4">{soloBanner.title}</h2>
-            <p className="text-white/80 text-lg mb-8">{soloBanner.subtitle}</p>
-            <button className="bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 transition-all">
+            <h2 className="text-white text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">{soloBanner.title}</h2>
+            <p className="text-white/80 text-lg mb-8 drop-shadow">{soloBanner.subtitle}</p>
+            <button className="bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 transition-all duration-300">
               {soloBanner.button_text || 'Discover Collection'}
             </button>
           </div>
@@ -480,7 +526,7 @@ function Home() {
         </div>
       </section>
 
-      {/* Newsletter - Fixed with API integration */}
+      {/* Newsletter */}
       <section className="py-20 px-4 border-t border-white/10">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Join Our Newsletter</h2>

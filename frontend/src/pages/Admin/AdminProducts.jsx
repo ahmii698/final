@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 
 const API_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = 'http://127.0.0.1:8000';
 
 function AdminProducts() {
   const [products, setProducts] = useState([]);
@@ -32,6 +33,12 @@ function AdminProducts() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    return `${BASE_URL}${imagePath}`;
   };
 
   const handleImageChange = (e, type) => {
@@ -69,10 +76,9 @@ function AdminProducts() {
 
     try {
       const url = editing ? `${API_URL}/admin/products/${editing.id}` : `${API_URL}/admin/products`;
-      const method = editing ? 'POST' : 'POST';
       
       const response = await fetch(url, {
-        method: method,
+        method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formDataToSend
       });
@@ -85,9 +91,11 @@ function AdminProducts() {
         setHoverImageFile(null);
         setImagePreview('');
         setHoverImagePreview('');
+        alert('Product saved successfully!');
       }
     } catch (error) {
       console.error('Error:', error);
+      alert('Error saving product');
     }
   };
 
@@ -100,6 +108,7 @@ function AdminProducts() {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       fetchProducts();
+      alert('Product deleted!');
     } catch (error) {
       console.error('Error:', error);
     }
@@ -138,7 +147,7 @@ function AdminProducts() {
               )}
               {formData.image && !imageFile && (
                 <div className="mt-2">
-                  <img src={formData.image} alt="Current" className="w-20 h-20 object-cover rounded-lg" />
+                  <img src={getImageUrl(formData.image)} alt="Current" className="w-20 h-20 object-cover rounded-lg" />
                   <p className="text-white/40 text-xs mt-1">Current image</p>
                 </div>
               )}
@@ -154,7 +163,7 @@ function AdminProducts() {
               )}
               {formData.hover_image && !hoverImageFile && (
                 <div className="mt-2">
-                  <img src={formData.hover_image} alt="Current" className="w-20 h-20 object-cover rounded-lg" />
+                  <img src={getImageUrl(formData.hover_image)} alt="Current" className="w-20 h-20 object-cover rounded-lg" />
                   <p className="text-white/40 text-xs mt-1">Current hover image</p>
                 </div>
               )}
@@ -170,19 +179,47 @@ function AdminProducts() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="border-b border-white/10">
-              <tr><th className="py-3 text-white/60">Image</th><th className="py-3 text-white/60">Name</th><th className="py-3 text-white/60">Price</th><th className="py-3 text-white/60">Category</th><th className="py-3 text-white/60">Actions</th></tr>
+              <tr>
+                <th className="py-3 text-white/60">Image</th>
+                <th className="py-3 text-white/60">Name</th>
+                <th className="py-3 text-white/60">Price</th>
+                <th className="py-3 text-white/60">Category</th>
+                <th className="py-3 text-white/60">Actions</th>
+              </tr>
             </thead>
             <tbody>
               {products.map(product => (
                 <tr key={product.id} className="border-b border-white/10">
                   <td className="py-3">
-                    <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
-                  </td>
+                    {product.image && (
+                      <img 
+                        src={getImageUrl(product.image)} 
+                        alt={product.name} 
+                        className="w-12 h-12 object-cover rounded"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/48x48?text=No+Image';
+                        }}
+                      />
+                    )}
+                   </td>
                   <td className="py-3 text-white">{product.name}</td>
                   <td className="py-3 text-white">${product.price}</td>
                   <td className="py-3 text-white/70">{product.category}</td>
                   <td className="py-3">
-                    <button onClick={() => { setEditing(product); setFormData(product); }} className="text-blue-400 mr-3">Edit</button>
+                    <button onClick={() => { 
+                      setEditing(product); 
+                      setFormData({
+                        name: product.name,
+                        price: product.price,
+                        old_price: product.old_price || '',
+                        image: product.image,
+                        hover_image: product.hover_image || '',
+                        rating: product.rating || '',
+                        category: product.category,
+                        order: product.order || '',
+                        is_featured: product.is_featured || 0
+                      });
+                    }} className="text-blue-400 mr-3">Edit</button>
                     <button onClick={() => handleDelete(product.id)} className="text-red-400">Delete</button>
                   </td>
                 </tr>

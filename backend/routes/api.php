@@ -171,6 +171,14 @@ Route::prefix('admin')->group(function () {
     
     // ===================== CONTACT REPLY (EMAIL) =====================
     Route::post('/contact-submissions/{id}/reply', [AdminController::class, 'replyToContact']);
+    
+    // ===================== RECENT CLIENTS =====================
+    Route::get('/recent-clients', [AdminController::class, 'getRecentClients']);
+    
+    // ===================== BLOG FEATURED (ADMIN) =====================
+    Route::get('/blog-featured', [AdminController::class, 'getBlogFeatured']);
+    Route::post('/blog-featured/{id}', [AdminController::class, 'updateBlogFeatured']);
+    Route::put('/blog-featured/{id}', [AdminController::class, 'updateBlogFeatured']);
 });
 
 // ===================== FRONTEND HERO API ROUTES =====================
@@ -196,6 +204,15 @@ Route::get('/track-hero', function() {
     $hero = DB::table('track_hero')->where('active', 1)->first();
     if ($hero) $hero->image = $hero->image;
     return response()->json(['success' => true, 'data' => $hero]);
+});
+
+// ===================== BLOG FEATURED (FRONTEND) =====================
+Route::get('/blog-featured-front', function() {
+    $featured = DB::table('blog_featured')->where('active', 1)->first();
+    if ($featured) {
+        $featured->image = $featured->image;
+    }
+    return response()->json(['success' => true, 'data' => $featured]);
 });
 
 // ===================== SHOP BANNER FOR FRONTEND =====================

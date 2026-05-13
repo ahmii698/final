@@ -7,7 +7,6 @@ const API_URL = 'http://127.0.0.1:8000/api';
 const BASE_URL = 'http://127.0.0.1:8000';
 
 function Shop() {
-  const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('default');
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState([]);
@@ -16,17 +15,8 @@ function Shop() {
   // Newsletter states
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
-  const [newsletterMessage, setNewsletterMessage] = useState('');  // ← Fixed typo
+  const [newsletterMessage, setNewsletterMessage] = useState('');
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
-
-  // Categories
-  const categories = [
-    { id: 'all', name: 'All Products', icon: 'M4 6h16M4 12h16M4 18h16' },
-    { id: 'rings', name: 'Rings', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z' },
-    { id: 'chains', name: 'Chains', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
-    { id: 'bracelets', name: 'Bracelets', icon: 'M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z' },
-    { id: 'watches', name: 'Watches', icon: 'M12 8v4l3 3M12 2a10 10 0 100 20 10 10 0 000-20z' },
-  ];
 
   // Helper function to fix image URLs
   const fixImageUrl = (imagePath) => {
@@ -118,9 +108,8 @@ function Shop() {
     }
   };
 
-  // Filter and sort products
-  const filteredProducts = products.filter(p => filter === 'all' || p.category === filter);
-  const sortedProducts = [...filteredProducts].sort((a, b) => {
+  // Sort products only (no filter)
+  const sortedProducts = [...products].sort((a, b) => {
     if (sort === 'price-low') return a.price - b.price;
     if (sort === 'price-high') return b.price - a.price;
     if (sort === 'rating') return b.rating - a.rating;
@@ -149,7 +138,7 @@ function Shop() {
           <img
             src={shopHero?.image || `${BASE_URL}/uploads/shop/hero_shop.webp`}
             alt={shopHero?.title || 'Shop'}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
             onError={(e) => {
               console.error('Shop hero image failed to load:', shopHero?.image);
               e.target.src = `${BASE_URL}/uploads/shop/hero_shop.webp`;
@@ -168,30 +157,10 @@ function Shop() {
         </div>
       </section>
 
-      {/* Category Filters */}
-      <section className="py-8 px-4 border-b border-white/10 sticky top-16 bg-black/95 backdrop-blur-sm z-20">
+      {/* Sort Only Section - No Category Filters */}
+      <section className="py-6 px-4 border-b border-white/10 sticky top-16 bg-black/95 backdrop-blur-sm z-20">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex flex-wrap gap-3">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setFilter(cat.id)}
-                  className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center gap-2 ${
-                    filter === cat.id
-                      ? 'bg-white text-black'
-                      : 'bg-white/10 hover:bg-white/20'
-                  }`}
-                  style={filter !== cat.id ? { color: 'rgba(255, 255, 255, 0.7)' } : {}}
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={filter !== cat.id ? { color: 'rgba(255, 255, 255, 0.7)' } : {}}>
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={cat.icon} />
-                  </svg>
-                  {cat.name}
-                </button>
-              ))}
-            </div>
-
+          <div className="flex justify-end items-center">
             <div className="flex items-center gap-3">
               <span style={{ color: 'rgba(255, 255, 255, 0.4)' }} className="text-sm">Sort by:</span>
               <select
@@ -214,7 +183,7 @@ function Shop() {
       <section className="py-12 px-4 max-w-7xl mx-auto">
         {sortedProducts.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-white/60 text-lg">No products found in this category.</p>
+            <p className="text-white/60 text-lg">No products found.</p>
           </div>
         ) : (
           <>
