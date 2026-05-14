@@ -1,15 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 const BASE_URL = 'http://127.0.0.1:8000';
 
+const toastConfig = {
+  position: "bottom-right",
+  autoClose: 3000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
+
 function Blog() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [posts, setPosts] = useState([]);
   const [featuredPost, setFeaturedPost] = useState(null);
   const [blogHero, setBlogHero] = useState(null);
@@ -52,6 +63,7 @@ function Blog() {
       }
     } catch (error) {
       console.error('Error fetching blog data:', error);
+      toast.error('Failed to load blog posts!', toastConfig);
     } finally {
       setLoading(false);
     }
@@ -61,15 +73,6 @@ function Blog() {
     navigate(`/blog/${slug}`);
   };
 
-  // Filter posts based on search only
-  const filteredPosts = posts.filter(post => {
-    const matchesSearch = searchTerm === '' || 
-      post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (post.excerpt && post.excerpt.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (post.category && post.category.toLowerCase().includes(searchTerm.toLowerCase()));
-    return matchesSearch;
-  });
-
   if (loading) {
     return (
       <div className="min-h-screen bg-black">
@@ -78,6 +81,7 @@ function Blog() {
           <div className="text-white text-xl">Loading...</div>
         </div>
         <Footer />
+        <ToastContainer />
       </div>
     );
   }
@@ -86,71 +90,42 @@ function Blog() {
     <div className="min-h-screen bg-black">
       <Navbar />
 
-      {/* Hero Section - Dynamic from blog_hero table */}
-      <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
+      {/* Hero Section */}
+      <section className="relative h-[40vh] md:h-[45vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={blogHero?.image || `${BASE_URL}/images/15.webp`}
             alt={blogHero?.title || 'Blog'}
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover"
             onError={(e) => {
-              console.error('Blog hero image failed to load:', blogHero?.image);
               e.target.src = `${BASE_URL}/images/15.webp`;
             }}
           />
           <div className="absolute inset-0 bg-black/60" />
         </div>
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-5xl md:text-7xl font-bold mb-4 tracking-wider drop-shadow-lg" style={{ color: 'white' }}>
+          <h1 className="text-4xl md:text-6xl font-bold mb-3 tracking-wider" style={{ color: 'white' }}>
             {blogHero?.title || 'Our Blog'}
           </h1>
-          <p className="text-xl max-w-2xl mx-auto drop-shadow" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+          <p className="text-lg md:text-xl max-w-2xl mx-auto" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
             {blogHero?.subtitle || 'Insights, stories, and inspiration from the world of luxury'}
           </p>
-          <div className="w-24 h-px bg-white/20 mx-auto mt-8" />
+          <div className="w-20 h-px bg-white/20 mx-auto mt-6" />
         </div>
       </section>
 
-      {/* Search Only Section */}
-      <section className="py-8 px-4 border-b border-white/10 sticky top-16 bg-black/95 backdrop-blur-sm z-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex justify-end">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search articles..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-72 bg-white/10 border border-white/20 rounded-full px-4 py-2 pl-10 text-sm focus:outline-none focus:border-white/40 text-white"
-              />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: 'rgba(255, 255, 255, 0.4)' }}>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Post - Like ProductCard style */}
-      {searchTerm === '' && featuredPost && featuredPost.active === 1 && (
+      {/* Featured Post */}
+      {featuredPost && featuredPost.active === 1 && (
         <section className="py-12 px-4 max-w-7xl mx-auto">
           <div 
-            onClick={() => window.location.href = featuredPost.link || '#'}
+            onClick={() => handlePostClick(featuredPost.slug || featuredPost.link)}
             className="relative rounded-2xl overflow-hidden group cursor-pointer"
           >
             <div className="absolute inset-0">
               <img
                 src={featuredPost.image}
                 alt={featuredPost.title}
-                className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 onError={(e) => {
                   e.target.src = `${BASE_URL}/images/15.webp`;
                 }}
@@ -176,67 +151,52 @@ function Blog() {
         </section>
       )}
 
-      {/* Blog Grid - Same as ProductCard style */}
+      {/* Blog Grid - No Search, No Categories */}
       <section className="py-12 px-4 max-w-7xl mx-auto">
-        {filteredPosts.length === 0 ? (
+        {posts.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-white/60 text-lg">No posts found matching your search.</p>
+            <p className="text-white/60 text-lg">No posts found.</p>
           </div>
         ) : (
           <>
             <div className="flex justify-between items-center mb-6">
               <p className="text-white/40 text-sm">
-                Showing <span className="text-white">{filteredPosts.length}</span> articles
-                {searchTerm && <span className="ml-2">for "{searchTerm}"</span>}
+                Showing <span className="text-white">{posts.length}</span> articles
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPosts.map((post) => (
+              {posts.map((post) => (
                 <div
                   key={post.id}
                   onClick={() => handlePostClick(post.slug)}
-                  className="group bg-gradient-to-br from-gray-900 to-black rounded-xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer"
+                  className="group bg-gradient-to-br from-gray-900 to-black rounded-xl overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300 cursor-pointer hover:-translate-y-1"
                 >
-                  {/* Image Container - Same as ProductCard */}
                   <div className="relative h-64 overflow-hidden bg-gray-800">
                     <img
                       src={`${BASE_URL}${post.image}`}
                       alt={post.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/400x300?text=No+Image';
+                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\' viewBox=\'0 0 400 300\'%3E%3Crect width=\'400\' height=\'300\' fill=\'%23333333\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23666666\' font-size=\'14\'%3ENo Image%3C/text%3E%3C/svg%3E';
                       }}
                     />
-                    {/* Optional: Category badge on image */}
-                    {post.category && (
-                      <div className="absolute top-3 left-3">
-                        <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded text-white text-xs">
-                          {post.category}
-                        </span>
-                      </div>
-                    )}
                   </div>
                   
-                  {/* Content - Same as ProductCard info section */}
                   <div className="p-4">
-                    {/* Date and Read Time */}
                     <div className="flex items-center gap-3 text-white/40 text-xs mb-2">
-                      <span>{new Date(post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <span>{new Date(post.created_at || post.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                       <span>•</span>
                       <span>{post.read_time || '5 min read'}</span>
                     </div>
                     
-                    {/* Title */}
                     <h3 className="text-lg font-semibold text-white mb-2 line-clamp-2 group-hover:text-white/90 transition">
                       {post.title}
                     </h3>
                     
-                    {/* Excerpt */}
                     <p className="text-white/50 text-sm leading-relaxed line-clamp-2 mb-3">
                       {post.excerpt}
                     </p>
                     
-                    {/* Read More link */}
                     <div className="text-white/70 hover:text-white text-sm font-medium inline-flex items-center gap-1 transition-colors">
                       Read More
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,6 +230,7 @@ function Blog() {
       </section>
 
       <Footer />
+      <ToastContainer />
     </div>
   );
 }

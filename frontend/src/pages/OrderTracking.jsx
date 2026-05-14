@@ -11,6 +11,7 @@ function OrderTracking() {
   const [isLoading, setIsLoading] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [trackHero, setTrackHero] = useState(null);
+  const [error, setError] = useState('');
 
   // Check for theme
   useEffect(() => {
@@ -56,30 +57,30 @@ function OrderTracking() {
     }
   };
 
-  const handleTrack = (e) => {
+  const handleTrack = async (e) => {
     e.preventDefault();
+    setError('');
+    
     if (orderId.trim()) {
       setIsLoading(true);
-      setTimeout(() => {
-        setTracked({
-          id: orderId,
-          status: 'shipped',
-          statusText: 'Your order has been shipped',
-          date: 'Dec 20, 2024',
-          estimatedDelivery: 'Dec 22, 2024',
-          items: 2,
-          total: 498,
-          shippingAddress: '123 Luxury Avenue, New York, NY 10001',
-          paymentMethod: 'Credit Card •••• 4242',
-          steps: [
-            { name: 'Order Placed', completed: true, date: 'Dec 18, 2024', time: '10:30 AM' },
-            { name: 'Processing', completed: true, date: 'Dec 19, 2024', time: '2:15 PM' },
-            { name: 'Shipped', completed: true, date: 'Dec 20, 2024', time: '9:45 AM' },
-            { name: 'Delivered', completed: false, date: 'Expected Dec 22, 2024', time: '' }
-          ]
-        });
+      
+      try {
+        const response = await fetch(`${API_URL}/track-order/${orderId}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setTracked(result.data);
+        } else {
+          setError('Order not found. Please check your Order ID.');
+          setTracked(null);
+        }
+      } catch (error) {
+        console.error('Error tracking order:', error);
+        setError('Network error. Please try again.');
+        setTracked(null);
+      } finally {
         setIsLoading(false);
-      }, 1000);
+      }
     }
   };
 
@@ -88,15 +89,39 @@ function OrderTracking() {
       case 'delivered': return 'text-green-500';
       case 'shipped': return 'text-blue-500';
       case 'processing': return 'text-yellow-500';
+      case 'pending': return 'text-orange-500';
+      case 'cancelled': return 'text-red-500';
       default: return isDarkTheme ? 'text-white' : 'text-gray-900';
     }
+  };
+
+  const getStatusSteps = (status, createdAt) => {
+    const createdDate = new Date(createdAt);
+    const steps = [
+      { name: 'Order Placed', completed: true, date: createdDate.toLocaleDateString() },
+      { name: 'Processing', completed: ['processing', 'shipped', 'delivered'].includes(status), date: null },
+      { name: 'Shipped', completed: ['shipped', 'delivered'].includes(status), date: null },
+      { name: 'Delivered', completed: status === 'delivered', date: null }
+    ];
+    return steps;
+  };
+
+  const getStatusText = (status) => {
+    const texts = {
+      pending: 'Your order has been received and is awaiting processing',
+      processing: 'Your order is being processed',
+      shipped: 'Your order has been shipped',
+      delivered: 'Your order has been delivered',
+      cancelled: 'Your order has been cancelled'
+    };
+    return texts[status] || 'Order status unknown';
   };
 
   return (
     <div className={`min-h-screen ${isDarkTheme ? 'bg-black' : 'bg-gray-50'}`}>
       <Navbar />
 
-      {/* Hero Section - Dynamic from track_hero table */}
+      {/* Hero Section */}
       <section className="relative h-[40vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <img
@@ -138,7 +163,7 @@ function OrderTracking() {
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
-                placeholder="Enter your order ID (e.g., LXE-12345)"
+                placeholder="Enter your order ID (e.g., LXE1778761913270)"
                 value={orderId}
                 onChange={(e) => setOrderId(e.target.value)}
                 className={`flex-1 ${isDarkTheme ? 'bg-white/5 border-white/20 text-white placeholder-white/40' : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl px-5 py-3 focus:outline-none transition-colors`}
@@ -153,6 +178,9 @@ function OrderTracking() {
               </button>
             </div>
           </form>
+          {error && (
+            <p className="text-red-500 text-sm text-center">{error}</p>
+          )}
           <p className={`${isDarkTheme ? 'text-white/30' : 'text-gray-400'} text-xs text-center`}>
             Order ID can be found in your confirmation email
           </p>
@@ -170,16 +198,16 @@ function OrderTracking() {
                 <h3 className={`text-2xl font-bold ${getStatusColor(tracked.status)}`}>
                   {tracked.status.charAt(0).toUpperCase() + tracked.status.slice(1)}
                 </h3>
-                <p className={`${isDarkTheme ? 'text-white/60' : 'text-gray-600'} text-sm mt-1`}>{tracked.statusText}</p>
+                <p className={`${isDarkTheme ? 'text-white/60' : 'text-gray-600'} text-sm mt-1`}>{getStatusText(tracked.status)}</p>
               </div>
               <div className="text-right">
-                <p className={`${isDarkTheme ? 'text-white/40' : 'text-gray-500'} text-sm`}>ESTIMATED DELIVERY</p>
-                <p className={`${isDarkTheme ? 'text-white' : 'text-gray-900'} font-semibold text-lg`}>{tracked.estimatedDelivery}</p>
+                <p className={`${isDarkTheme ? 'text-white/40' : 'text-gray-500'} text-sm`}>ORDER DATE</p>
+                <p className={`${isDarkTheme ? 'text-white' : 'text-gray-900'} font-semibold text-lg`}>{tracked.date}</p>
               </div>
             </div>
           </div>
 
-          {/* Timeline */}
+          {/* Timeline - Without Time */}
           <div className={`${isDarkTheme ? 'bg-black border-white/10' : 'bg-white border-gray-200'} rounded-2xl border p-6 md:p-8 mb-6`}>
             <h3 className={`text-xl font-semibold ${isDarkTheme ? 'text-white' : 'text-gray-900'} mb-6 flex items-center gap-2`}>
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -190,21 +218,16 @@ function OrderTracking() {
             <div className="relative">
               <div className={`absolute left-5 top-0 bottom-0 w-px ${isDarkTheme ? 'bg-white/10' : 'bg-gray-200'}`} />
               <div className="space-y-8">
-                {tracked.steps.map((step, index) => (
+                {tracked.steps?.map((step, index) => (
                   <div key={step.name} className="relative flex items-start gap-4">
                     <div className={`w-4 h-4 rounded-full mt-1 ${step.completed ? 'bg-green-500' : isDarkTheme ? 'bg-white/20' : 'bg-gray-300'} z-10 ring-4 ${isDarkTheme ? 'ring-black' : 'ring-white'}`} />
                     <div className="flex-1">
-                      <div className="flex flex-wrap justify-between items-start gap-2">
-                        <div>
-                          <p className={`font-semibold ${step.completed ? (isDarkTheme ? 'text-white' : 'text-gray-900') : (isDarkTheme ? 'text-white/40' : 'text-gray-400')}`}>
-                            {step.name}
-                          </p>
-                          {step.date && (
-                            <p className={`${isDarkTheme ? 'text-white/40' : 'text-gray-500'} text-sm`}>{step.date}</p>
-                          )}
-                        </div>
-                        {step.time && (
-                          <p className={`${isDarkTheme ? 'text-white/40' : 'text-gray-500'} text-sm`}>{step.time}</p>
+                      <div>
+                        <p className={`font-semibold ${step.completed ? (isDarkTheme ? 'text-white' : 'text-gray-900') : (isDarkTheme ? 'text-white/40' : 'text-gray-400')}`}>
+                          {step.name}
+                        </p>
+                        {step.date && (
+                          <p className={`${isDarkTheme ? 'text-white/40' : 'text-gray-500'} text-sm mt-1`}>{step.date}</p>
                         )}
                       </div>
                     </div>
@@ -276,7 +299,7 @@ function OrderTracking() {
       )}
 
       {/* Help Section (when no order tracked) */}
-      {!tracked && !isLoading && (
+      {!tracked && !isLoading && !error && (
         <section className="py-12 px-4 max-w-4xl mx-auto">
           <div className="text-center">
             <div className={`w-20 h-20 mx-auto mb-6 rounded-full ${isDarkTheme ? 'bg-white/5' : 'bg-gray-100'} flex items-center justify-center`}>

@@ -2,22 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useCart } from '../../context/CartContext';
-import { useAuth } from '../../context/AuthContext';
-
+import { useCart } from '../../context/CartContext';  // <-- ../../ lagaya
+import { useAuth } from '../../context/AuthContext';  
 const BASE_URL = 'http://127.0.0.1:8000';
 
 const toastConfig = {
   position: "bottom-right",
   autoClose: 3000,
-  hideProgressBar: false,
-  closeOnClick: true,
-  pauseOnHover: true,
-  draggable: true,
   theme: "dark",
 };
 
-function ProductCard({ product }) {
+function NewArrivalCard({ product }) {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const { addToCart, addToWishlist, removeFromWishlist, isInWishlist } = useCart();
@@ -34,12 +29,11 @@ function ProductCard({ product }) {
   let hoverImage = mainImage;
   if (product.hover_image) {
     hoverImage = getImageUrl(product.hover_image);
-  } else if (product.hoverImage) {
-    hoverImage = getImageUrl(product.hoverImage);
   }
 
   const handleQuickView = () => {
-    navigate(`/product/${product.id}`);
+    // Use new arrival ID, not product ID
+    navigate(`/new-arrival/${product.id}`);
   };
 
   const requireLogin = () => {
@@ -54,8 +48,21 @@ function ProductCard({ product }) {
       requireLogin();
       return;
     }
-    addToCart(product);
-    toast.success(`${product.name} added to cart!`, toastConfig);
+    
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingItem = cart.find(item => item.id === product.id);
+    
+    if (existingItem) {
+      existingItem.quantity = (existingItem.quantity || 1) + 1;
+      localStorage.setItem('cart', JSON.stringify(cart));
+      toast.success(`${product.name} quantity increased!`, toastConfig);
+    } else {
+      const cartItem = { ...product, quantity: 1 };
+      cart.push(cartItem);
+      localStorage.setItem('cart', JSON.stringify(cart));
+      addToCart(cartItem);
+      toast.success(`${product.name} added to cart!`, toastConfig);
+    }
   };
 
   const handleWishlist = (e) => {
@@ -64,6 +71,7 @@ function ProductCard({ product }) {
       requireLogin();
       return;
     }
+    
     if (isInWishlist(product.id)) {
       removeFromWishlist(product.id);
       toast.info(`${product.name} removed from wishlist`, toastConfig);
@@ -73,9 +81,6 @@ function ProductCard({ product }) {
     }
   };
 
-  // Default placeholder image as data URL (no external network call)
-  const defaultImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300' viewBox='0 0 300 300'%3E%3Crect width='300' height='300' fill='%23333333'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23666666' font-size='14'%3ENo Image%3C/text%3E%3C/svg%3E";
-
   return (
     <div 
       className="bg-gradient-to-br from-gray-900 to-black rounded-xl overflow-hidden border border-white/10 transition-all duration-300 hover:border-white/30 hover:shadow-2xl hover:-translate-y-1"
@@ -84,11 +89,11 @@ function ProductCard({ product }) {
     >
       <div className="relative h-64 overflow-hidden">
         <img
-          src={isHovered ? hoverImage : mainImage}
+          src={isHovered && hoverImage !== mainImage ? hoverImage : mainImage}
           alt={product.name}
           className="w-full h-full object-cover transition-all duration-700"
           onError={(e) => {
-            e.target.src = defaultImage;
+            e.target.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\' viewBox=\'0 0 300 300\'%3E%3Crect width=\'300\' height=\'300\' fill=\'%23333333\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23666666\' font-size=\'14\'%3ENo Image%3C/text%3E%3C/svg%3E';
           }}
         />
         
@@ -152,4 +157,4 @@ function ProductCard({ product }) {
   );
 }
 
-export default ProductCard;
+export default NewArrivalCard;

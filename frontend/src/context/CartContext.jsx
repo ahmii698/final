@@ -98,7 +98,6 @@ export const CartProvider = ({ children }) => {
   // Add to cart (only works when logged in)
   const addToCart = (product, quantity = 1) => {
     if (!isAuthenticated) {
-      // Redirect to login or show message
       alert('Please login to add items to cart');
       return false;
     }
@@ -172,6 +171,24 @@ export const CartProvider = ({ children }) => {
     return cartItems.some(item => item.id === productId);
   };
 
+  // ===================== NEW FUNCTIONS =====================
+  
+  // Clear entire cart
+  const clearCart = () => {
+    setCartItems([]);
+    if (isAuthenticated && user) {
+      localStorage.removeItem(getCartKey(user.id));
+    }
+    setCartCount(0);
+  };
+
+  // Get cart total amount
+  const getCartTotal = () => {
+    return cartItems.reduce((sum, item) => sum + (parseFloat(item.price) * (item.quantity || 1)), 0);
+  };
+
+  // ===================== END NEW FUNCTIONS =====================
+
   if (!isLoaded) {
     return null;
   }
@@ -188,7 +205,9 @@ export const CartProvider = ({ children }) => {
       addToWishlist,
       removeFromWishlist,
       isInWishlist,
-      isInCart
+      isInCart,
+      clearCart,      // ← ADDED
+      getCartTotal    // ← ADDED
     }}>
       {children}
     </CartContext.Provider>

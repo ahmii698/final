@@ -1,9 +1,21 @@
 import { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 
-const API_URL = 'http://localhost:8000/api';  // ← CHANGE THIS
-const BASE_URL = 'http://localhost:8000';      // ← CHANGE THIS
+const API_URL = 'http://localhost:8000/api';
+const BASE_URL = 'http://localhost:8000';
+
+const toastConfig = {
+  position: "bottom-right",
+  autoClose: 4000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
 
 function Contact() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
@@ -12,6 +24,12 @@ function Contact() {
   const [faqs, setFaqs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
+  
+  // Newsletter states
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSubmitting, setNewsletterSubmitting] = useState(false);
+  const [newsletterMessage, setNewsletterMessage] = useState('');
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
   
   // Hero section state
   const [heroData, setHeroData] = useState(null);
@@ -67,14 +85,76 @@ function Contact() {
       
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Failed to load contact data!', toastConfig);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Newsletter subscription handler
+  const handleNewsletterSubmit = async (e) => {
+    e.preventDefault();
+    setNewsletterSubmitting(true);
+    setNewsletterMessage('');
+    
+    try {
+      const response = await fetch(`${API_URL}/subscribe-newsletter`, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ email: newsletterEmail })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setNewsletterSuccess(true);
+        setNewsletterMessage(result.message);
+        toast.success(result.message, toastConfig);
+        setNewsletterEmail('');
+        setTimeout(() => {
+          setNewsletterSuccess(false);
+          setNewsletterMessage('');
+        }, 3000);
+      } else {
+        setNewsletterSuccess(false);
+        const errorMsg = result.message || 'Email already subscribed or invalid';
+        setNewsletterMessage(errorMsg);
+        toast.error(errorMsg, toastConfig);
+      }
+    } catch (error) {
+      console.error('Error subscribing:', error);
+      const errorMsg = 'Network error. Please try again.';
+      setNewsletterMessage(errorMsg);
+      toast.error(errorMsg, toastConfig);
+    } finally {
+      setNewsletterSubmitting(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
+    
+    // Validate form
+    if (!formData.name.trim()) {
+      toast.error('Please enter your name', toastConfig);
+      setIsSubmitting(false);
+      return;
+    }
+    if (!formData.email.trim()) {
+      toast.error('Please enter your email', toastConfig);
+      setIsSubmitting(false);
+      return;
+    }
+    if (!formData.message.trim()) {
+      toast.error('Please enter your message', toastConfig);
+      setIsSubmitting(false);
+      return;
+    }
     
     try {
       const response = await fetch(`${API_URL}/contact-submit`, {
@@ -89,14 +169,14 @@ function Contact() {
       const result = await response.json();
       
       if (result.success) {
-        alert('Message sent! We will get back to you soon.');
+        toast.success('Message sent! We will get back to you soon.', toastConfig);
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
-        alert(result.message || 'Something went wrong. Please try again.');
+        toast.error(result.message || 'Something went wrong. Please try again.', toastConfig);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Network error. Please try again.');
+      toast.error('Network error. Please try again.', toastConfig);
     } finally {
       setIsSubmitting(false);
     }
@@ -114,6 +194,7 @@ function Contact() {
           <div className={isDarkTheme ? 'text-white' : 'text-gray-900'}>Loading...</div>
         </div>
         <Footer />
+        <ToastContainer />
       </div>
     );
   }
@@ -130,7 +211,6 @@ function Contact() {
             alt={heroData?.title || 'Contact Us'}
             className="w-full h-full object-cover"
             onError={(e) => {
-              console.error('Hero image failed:', heroData?.image);
               e.target.src = `${BASE_URL}/images/15.webp`;
             }}
           />
@@ -249,20 +329,33 @@ function Contact() {
           <p className={`${isDarkTheme ? 'text-white/50' : 'text-gray-500'} mb-8`}>
             Subscribe to get exclusive offers and updates
           </p>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+          <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
               type="email"
               placeholder="Your email address"
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
               className={`flex-1 ${isDarkTheme ? 'bg-white/5 border-white/20 text-white placeholder-white/40' : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-400'} border rounded-xl px-5 py-3 focus:outline-none transition-colors`}
+              required
             />
-            <button className="px-8 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all hover:scale-105">
-              Subscribe
+            <button 
+              type="submit"
+              disabled={newsletterSubmitting}
+              className="px-8 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all hover:scale-105 disabled:opacity-50"
+            >
+              {newsletterSubmitting ? 'Subscribing...' : 'Subscribe'}
             </button>
           </form>
+          {newsletterMessage && (
+            <p className={`mt-4 text-sm ${newsletterSuccess ? 'text-green-400' : 'text-red-400'}`}>
+              {newsletterMessage}
+            </p>
+          )}
         </div>
       </section>
 
       <Footer />
+      <ToastContainer />
     </div>
   );
 }

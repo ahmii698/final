@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
     public function trackOrder($orderId)
     {
-        $order = Order::where('order_id', $orderId)->first();
+        $order = DB::table('orders')->where('order_id', $orderId)->first();
         if (!$order) return response()->json(['success' => false, 'message' => 'Order not found'], 404);
         
         $items = is_string($order->items) ? json_decode($order->items, true) : $order->items;
@@ -32,31 +33,88 @@ class OrderController extends Controller
                 'estimatedDelivery' => $order->status == 'shipped' ? date('M d, Y', strtotime('+3 days')) : '',
                 'items' => count($items), 'total' => $order->total,
                 'shippingAddress' => is_array($shippingAddress) ? implode(', ', $shippingAddress) : $shippingAddress,
-                'paymentMethod' => $order->payment_method == 'cod' ? 'Cash on Delivery' : 'Credit Card',
-                'steps' => $steps, 'trackingNumber' => $order->tracking_number
+                'paymentMethod' => $order->payment_method == 'cod' ? 'Cash on Delivery' : 'Bank Transfer',
+                'steps' => $steps, 'trackingNumber' => $order->tracking_number ?? null
             ]
         ]);
     }
     
     public function createOrder(Request $request)
     {
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255', 'customer_email' => 'required|email|max:255',
-            'customer_phone' => 'nullable|string|max:20', 'shipping_address' => 'required|array',
-            'items' => 'required|array', 'subtotal' => 'required|numeric', 'total' => 'required|numeric',
-            'payment_method' => 'nullable|string'
-        ]);
+        try {
+            // Validate request
+            $validated = $request->validate([
+                'customer_name' => 'required|string|max:255',
+                'customer_email' => 'required|email|max:255',
+                'customer_phone' => 'nullable|string|max:20',
+                'shipping_address' => 'required|string',
+                'items' => 'required|array',
+                'subtotal' => 'required|numeric',
+                'shipping' => 'nullable|numeric',
+                'total' => 'required|numeric',
+                'user_id' => 'nullable|integer'
+            ]);
+            
+            // Generate unique order ID
+            $orderId = 'LXE' . time() . rand(100, 999);
+            
+            // Create order
+            $orderData = [
+                'order_id' => $orderId,
+                'user_id' => $validated['user_id'] ?? null,
+                'customer_name' => $validated['customer_name'],
+                'customer_email' => $validated['customer_email'],
+                'customer_phone' => $validated['customer_phone'] ?? null,
+                'shipping_address' => $validated['shipping_address'],
+                'items' => json_encode($validated['items']),
+                'subtotal' => $validated['subtotal'],
+                'shipping' => $validated['shipping'] ?? 0,
+                'total' => $validated['total'],
+                'status' => 'pending',
+                'payment_method' => 'bank_transfer',
+                'payment_status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now()
+            ];
+            
+            $id = DB::table('orders')->insertGetId($orderData);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Order placed successfully',
+                'data' => [
+                    'id' => $id,
+                    'order_id' => $orderId,
+                    'customer_name' => $validated['customer_name'],
+                    'customer_email' => $validated['customer_email'],
+                    'customer_phone' => $validated['customer_phone'],
+                    'shipping_address' => $validated['shipping_address'],
+                    'items' => $validated['items'],
+                    'subtotal' => $validated['subtotal'],
+                    'shipping' => $validated['shipping'] ?? 0,
+                    'total' => $validated['total'],
+                    'status' => 'pending',
+                    'created_at' => now()
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function getUserOrders(Request $request)
+    {
+        $userId = $request->user()->id ?? null;
+        if (!$userId) {
+            return response()->json(['success' => false, 'message' => 'User not authenticated'], 401);
+        }
         
-        $orderId = 'LXE' . time() . rand(100, 999);
+        $orders = DB::table('orders')->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
         
-        $order = Order::create([
-            'order_id' => $orderId, 'customer_name' => $validated['customer_name'],
-            'customer_email' => $validated['customer_email'], 'customer_phone' => $validated['customer_phone'],
-            'shipping_address' => json_encode($validated['shipping_address']), 'items' => json_encode($validated['items']),
-            'subtotal' => $validated['subtotal'], 'shipping' => 10, 'total' => $validated['total'],
-            'status' => 'pending', 'payment_method' => $validated['payment_method'] ?? 'cod', 'payment_status' => 'pending'
-        ]);
-        
-        return response()->json(['success' => true, 'message' => 'Order created successfully', 'data' => ['order_id' => $orderId, 'status' => 'pending']]);
+        return response()->json(['success' => true, 'data' => $orders]);
     }
 }

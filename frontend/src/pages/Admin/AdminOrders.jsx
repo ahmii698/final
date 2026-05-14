@@ -61,7 +61,14 @@ function AdminOrders() {
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="border-b border-white/10">
-              <tr><th className="py-3 text-white/60">Order ID</th><th className="py-3 text-white/60">Customer</th><th className="py-3 text-white/60">Total</th><th className="py-3 text-white/60">Status</th><th className="py-3 text-white/60">Date</th><th className="py-3 text-white/60">Actions</th></tr>
+              <tr>
+                <th className="py-3 text-white/60">Order ID</th>
+                <th className="py-3 text-white/60">Customer</th>
+                <th className="py-3 text-white/60">Total</th>
+                <th className="py-3 text-white/60">Status</th>
+                <th className="py-3 text-white/60">Date</th>
+                <th className="py-3 text-white/60">Actions</th>
+              </tr>
             </thead>
             <tbody>
               {orders.map(order => (
@@ -79,13 +86,14 @@ function AdminOrders() {
                     <select
                       value={order.status}
                       onChange={(e) => updateStatus(order.id, e.target.value)}
-                      className="bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white text-sm"
+                      className="bg-gray-800 border border-white/20 rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-white/40"
+                      style={{ color: 'white', backgroundColor: '#1a1a1a' }}
                     >
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
+                      <option value="pending" className="bg-gray-800 text-white">Pending</option>
+                      <option value="processing" className="bg-gray-800 text-white">Processing</option>
+                      <option value="shipped" className="bg-gray-800 text-white">Shipped</option>
+                      <option value="delivered" className="bg-gray-800 text-white">Delivered</option>
+                      <option value="cancelled" className="bg-gray-800 text-white">Cancelled</option>
                     </select>
                   </td>
                 </tr>

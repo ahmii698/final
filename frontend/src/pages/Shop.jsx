@@ -1,10 +1,22 @@
 import { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import ProductCard from '../components/common/ProductCard';
 
 const API_URL = 'http://127.0.0.1:8000/api';
 const BASE_URL = 'http://127.0.0.1:8000';
+
+const toastConfig = {
+  position: "bottom-right",
+  autoClose: 3000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
 
 function Shop() {
   const [sort, setSort] = useState('default');
@@ -18,14 +30,12 @@ function Shop() {
   const [newsletterMessage, setNewsletterMessage] = useState('');
   const [newsletterSuccess, setNewsletterSuccess] = useState(false);
 
-  // Helper function to fix image URLs
   const fixImageUrl = (imagePath) => {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
     return `${BASE_URL}${imagePath}`;
   };
 
-  // Newsletter subscription handler
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
     setNewsletterSubmitting(true);
@@ -47,6 +57,7 @@ function Shop() {
       if (response.ok && result.success) {
         setNewsletterSuccess(true);
         setNewsletterMessage(result.message);
+        toast.success(result.message, toastConfig);
         setNewsletterEmail('');
         setTimeout(() => {
           setNewsletterSuccess(false);
@@ -54,32 +65,35 @@ function Shop() {
         }, 3000);
       } else {
         setNewsletterSuccess(false);
-        setNewsletterMessage(result.message || 'Email already subscribed or invalid');
+        const errorMsg = result.message || 'Email already subscribed or invalid';
+        setNewsletterMessage(errorMsg);
+        toast.error(errorMsg, toastConfig);
       }
     } catch (error) {
       console.error('Error subscribing:', error);
-      setNewsletterMessage('Network error. Please try again.');
+      const errorMsg = 'Network error. Please try again.';
+      setNewsletterMessage(errorMsg);
+      toast.error(errorMsg, toastConfig);
     } finally {
       setNewsletterSubmitting(false);
     }
   };
 
-  // Fetch products and shop hero from API
   useEffect(() => {
     fetchShopData();
   }, []);
 
   const fetchShopData = async () => {
     try {
-      // Fetch products
       const productsResponse = await fetch(`${API_URL}/products`);
       const productsResult = await productsResponse.json();
       
       if (productsResult.success) {
         setProducts(productsResult.data);
+      } else {
+        toast.error('Failed to load products!', toastConfig);
       }
       
-      // Fetch shop hero from shop_hero table
       try {
         const heroResponse = await fetch(`${API_URL}/shop-hero`);
         const heroResult = await heroResponse.json();
@@ -103,12 +117,12 @@ function Shop() {
       
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Network error! Failed to load products.', toastConfig);
     } finally {
       setLoading(false);
     }
   };
 
-  // Sort products only (no filter)
   const sortedProducts = [...products].sort((a, b) => {
     if (sort === 'price-low') return a.price - b.price;
     if (sort === 'price-high') return b.price - a.price;
@@ -124,6 +138,7 @@ function Shop() {
           <div className="text-white text-xl">Loading...</div>
         </div>
         <Footer />
+        <ToastContainer />
       </div>
     );
   }
@@ -132,32 +147,31 @@ function Shop() {
     <div className="min-h-screen bg-black">
       <Navbar />
 
-      {/* Hero Section - Dynamic from shop_hero table */}
-      <section className="relative h-[40vh] flex items-center justify-center overflow-hidden">
+      {/* Hero Section - Same style as About page */}
+      <section className="relative h-[40vh] md:h-[45vh] flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <img
             src={shopHero?.image || `${BASE_URL}/uploads/shop/hero_shop.webp`}
             alt={shopHero?.title || 'Shop'}
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover"
             onError={(e) => {
-              console.error('Shop hero image failed to load:', shopHero?.image);
               e.target.src = `${BASE_URL}/uploads/shop/hero_shop.webp`;
             }}
           />
           <div className="absolute inset-0 bg-black/60" />
         </div>
-        <div className="relative z-10 text-center px-4">
-          <h1 className="text-5xl md:text-6xl font-bold mb-4 tracking-wider" style={{ color: 'white' }}>
+        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-bold mb-3 tracking-wider" style={{ color: 'white' }}>
             {shopHero?.title || 'Our Collection'}
           </h1>
-          <p className="text-xl max-w-2xl mx-auto" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
+          <p className="text-lg md:text-xl max-w-2xl mx-auto" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
             {shopHero?.subtitle || 'Discover premium craftsmanship and timeless design'}
           </p>
-          <div className="w-24 h-px bg-white/20 mx-auto mt-6" />
+          <div className="w-20 h-px bg-white/20 mx-auto mt-6" />
         </div>
       </section>
 
-      {/* Sort Only Section - No Category Filters */}
+      {/* Sort Section */}
       <section className="py-6 px-4 border-b border-white/10 sticky top-16 bg-black/95 backdrop-blur-sm z-20">
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-end items-center">
@@ -189,7 +203,7 @@ function Shop() {
           <>
             <div className="flex justify-between items-center mb-6">
               <p className="text-white/40 text-sm">
-                Showing <span className="text-white">{sortedProducts.length}</span> products
+                Showing <span style={{ color: 'white' }}>{sortedProducts.length}</span> products
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -232,6 +246,7 @@ function Shop() {
       </section>
 
       <Footer />
+      <ToastContainer />
     </div>
   );
 }

@@ -36,70 +36,104 @@ class AdminController extends Controller
         return response()->json(['success' => true, 'token' => $token, 'user' => ['id' => $admin->id, 'email' => $admin->email]]);
     }
 
-    public function forgotPassword(Request $request)
-    {
-        $request->validate(['email' => 'required|email']);
+   public function forgotPassword(Request $request)
+{
+    $request->validate(['email' => 'required|email']);
 
-        $admin = DB::table('users')->where('email', $request->email)->where('role', 'admin')->first();
-        
-        if (!$admin) {
-            return response()->json(['success' => false, 'message' => 'Email not found'], 404);
-        }
-
-        $otp = rand(100000, 999999);
-        
-        try {
-            DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $request->email],
-                ['token' => $otp, 'created_at' => now()]
-            );
-        } catch (\Exception $e) {
-            DB::statement("CREATE TABLE IF NOT EXISTS password_reset_tokens (
-                email VARCHAR(255) PRIMARY KEY,
-                token VARCHAR(255) NOT NULL,
-                created_at TIMESTAMP NULL
-            )");
-            DB::table('password_reset_tokens')->updateOrInsert(
-                ['email' => $request->email],
-                ['token' => $otp, 'created_at' => now()]
-            );
-        }
-
-        $subject = "Password Reset OTP - LUXE Admin";
-        $message = "Your OTP for password reset is: $otp\n\nThis OTP is valid for 15 minutes.\n\nRegards,\nLUXE Team";
-        $headers = "From: noreply@luxe.com\r\n";
-        
-        @mail($request->email, $subject, $message, $headers);
-
-        return response()->json(['success' => true, 'message' => 'OTP sent to your email']);
+    $admin = DB::table('users')->where('email', $request->email)->where('role', 'admin')->first();
+    
+    if (!$admin) {
+        return response()->json(['success' => false, 'message' => 'Email not found'], 404);
     }
+
+    $otp = rand(100000, 999999);
+    
+    // Store OTP in users table instead of separate table
+    DB::table('users')->where('email', $request->email)->update([
+        'otp' => $otp,
+        'otp_expires_at' => now()->addMinutes(10)
+    ]);
+
+    // Send email using PHPMailer (like your replyToContact function)
+    try {
+        $mail = new PHPMailer(true);
+        
+        // Server settings - Same as your working email config
+        $mail->isSMTP();
+        $mail->Host = 'smtp.gmail.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = 'xahmedmalik30600@gmail.com';
+        $mail->Password = 'eqjltztoeuatrvtk'; // Your app password
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+        $mail->Port = 465;
+        
+        // Recipients
+        $mail->setFrom('xahmedmalik30600@gmail.com', 'LUXE Admin');
+        $mail->addAddress($request->email, $admin->name);
+        
+        // Content
+        $mail->isHTML(true);
+        $mail->Subject = 'Password Reset OTP - LUXE Admin';
+        $mail->Body = "
+            <html>
+            <body style='font-family: Arial, sans-serif;'>
+                <h2>Password Reset Request</h2>
+                <p>Hello <b>{$admin->name}</b>,</p>
+                <p>Your OTP for password reset is:</p>
+                <h1 style='color: #4CAF50; font-size: 32px;'>{$otp}</h1>
+                <p>This OTP is valid for 10 minutes.</p>
+                <p>If you didn't request this, please ignore this email.</p>
+                <br>
+                <p>Thanks,<br>LUXE Team</p>
+            </body>
+            </html>
+        ";
+        
+        $mail->send();
+        
+        return response()->json(['success' => true, 'message' => 'OTP sent to your email']);
+        
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Failed to send OTP: ' . $mail->ErrorInfo
+        ], 500);
+    }
+}
 
     public function resetPassword(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'otp' => 'required|numeric',
-            'new_password' => 'required|min:6'
-        ]);
+{
+    $request->validate([
+        'email' => 'required|email',
+        'otp' => 'required|numeric',
+        'new_password' => 'required|min:6'
+    ]);
 
-        $reset = DB::table('password_reset_tokens')->where('email', $request->email)->where('token', $request->otp)->first();
-        
-        if (!$reset) {
-            return response()->json(['success' => false, 'message' => 'Invalid OTP'], 400);
-        }
-        
-        if (Carbon::parse($reset->created_at)->addMinutes(15)->isPast()) {
-            return response()->json(['success' => false, 'message' => 'OTP expired'], 400);
-        }
-
-        DB::table('users')->where('email', $request->email)->update([
-            'password' => Hash::make($request->new_password)
-        ]);
-
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-
-        return response()->json(['success' => true, 'message' => 'Password reset successfully']);
+    $user = DB::table('users')->where('email', $request->email)->where('role', 'admin')->first();
+    
+    if (!$user) {
+        return response()->json(['success' => false, 'message' => 'Email not found'], 404);
     }
+    
+    // Check OTP from users table
+    if ($user->otp != $request->otp) {
+        return response()->json(['success' => false, 'message' => 'Invalid OTP'], 400);
+    }
+    
+    // Check if OTP expired
+    if (Carbon::parse($user->otp_expires_at)->isPast()) {
+        return response()->json(['success' => false, 'message' => 'OTP expired'], 400);
+    }
+
+    // Update password
+    DB::table('users')->where('email', $request->email)->update([
+        'password' => Hash::make($request->new_password),
+        'otp' => null,
+        'otp_expires_at' => null
+    ]);
+
+    return response()->json(['success' => true, 'message' => 'Password reset successfully']);
+}
 
     // ===================== DASHBOARD STATS =====================
     
@@ -825,6 +859,7 @@ class AdminController extends Controller
         return response()->json(['success' => true]);
     }
 
+    
     // ===================== BLOG POSTS CRUD =====================
     
     public function getBlogPosts(Request $request)
@@ -1420,6 +1455,76 @@ public function updateBlogFeatured(Request $request, $id)
             'message' => 'Testimonial rejected and deleted'
         ]);
     }
+    // ===================== PAYMENT PROOFS =====================
+    
+public function getPaymentProofs(Request $request)
+{
+    try {
+        $proofs = DB::table('payment_proofs')
+            ->orderBy('created_at', 'desc')
+            ->get();
+        
+        return response()->json([
+            'success' => true,
+            'data' => $proofs
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function approvePayment($id)
+{
+    try {
+        DB::table('payment_proofs')->where('id', $id)->update([
+            'status' => 'approved',
+            'updated_at' => now()
+        ]);
+        
+        // Also update order status if needed
+        $proof = DB::table('payment_proofs')->where('id', $id)->first();
+        if ($proof && $proof->order_id) {
+            DB::table('orders')->where('id', $proof->order_id)->update([
+                'payment_status' => 'paid',
+                'status' => 'processing',
+                'updated_at' => now()
+            ]);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment approved successfully'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
+public function rejectPayment($id)
+{
+    try {
+        DB::table('payment_proofs')->where('id', $id)->update([
+            'status' => 'rejected',
+            'updated_at' => now()
+        ]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment rejected successfully'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
 
     // ===================== FAQS CRUD =====================
     

@@ -21,7 +21,7 @@ function Cart() {
   };
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const shipping = 0;  // ← FREE SHIPPING
+  const shipping = 0;  // FREE SHIPPING
   const total = subtotal + shipping;
 
   if (!mounted) return null;
@@ -125,9 +125,14 @@ function Cart() {
                 <span className="text-white font-semibold">Total</span>
                 <span className="text-white font-bold text-xl">${total.toFixed(2)}</span>
               </div>
-              <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all hover:scale-105">
-                Proceed to Checkout
-              </button>
+              
+              {/* Proceed to Checkout Button - Updated with Link */}
+              <Link to="/checkout">
+                <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all hover:scale-105">
+                  Proceed to Checkout
+                </button>
+              </Link>
+              
               <Link to="/shop" className="block text-center mt-4 text-white/50 text-sm hover:text-white">
                 Continue Shopping →
               </Link>

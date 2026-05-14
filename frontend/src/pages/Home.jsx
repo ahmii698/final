@@ -1,16 +1,30 @@
 import { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
-import ProductCard from '../components/common/ProductCard';
+import BestsellerCard from '../components/common/BestsellerCard';
+import NewArrivalCard from '../components/common/NewArrivalCard';
 
 const API_URL = 'http://localhost:8000/api';
 const BASE_URL = 'http://localhost:8000';
+
+const toastConfig = {
+  position: "bottom-right",
+  autoClose: 3000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
 
 function Home() {
   const [currentBanner, setCurrentBanner] = useState(0);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showAnimation, setShowAnimation] = useState(false);
   
   // Modal states
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -40,6 +54,17 @@ function Home() {
   const [testimonials, setTestimonials] = useState([]);
   const [features, setFeatures] = useState([]);
 
+  // Check if animation should show (ONLY ONCE - PERMANENT)
+  useEffect(() => {
+    const hasSeenAnimation = localStorage.getItem('homeAnimationShown');
+    if (!hasSeenAnimation) {
+      localStorage.setItem('homeAnimationShown', 'true');
+      setShowAnimation(true);
+    } else {
+      setShowAnimation(false);
+    }
+  }, []);
+
   // Helper function to fix image URLs
   const fixImageUrl = (imagePath) => {
     if (!imagePath) return '';
@@ -54,11 +79,8 @@ function Home() {
 
   const fetchHomeData = async () => {
     try {
-      console.log('Fetching home data...');
       const response = await fetch(`${API_URL}/home-data`);
       const result = await response.json();
-      
-      console.log('API Response received');
       
       if (result.success) {
         const fixedBanners = (result.data.banners || []).map(banner => ({
@@ -94,12 +116,13 @@ function Home() {
       }
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast.error('Failed to load home data!', toastConfig);
     } finally {
       setLoading(false);
     }
   };
 
-  // Newsletter subscription handler
+  // Newsletter subscription handler with toast
   const handleNewsletterSubmit = async (e) => {
     e.preventDefault();
     setNewsletterSubmitting(true);
@@ -121,6 +144,7 @@ function Home() {
       if (response.ok && result.success) {
         setNewsletterSuccess(true);
         setNewsletterMessage(result.message);
+        toast.success(result.message, toastConfig);
         setNewsletterEmail('');
         setTimeout(() => {
           setNewsletterSuccess(false);
@@ -128,30 +152,37 @@ function Home() {
         }, 3000);
       } else {
         setNewsletterSuccess(false);
-        setNewsletterMessage(result.message || 'Email already subscribed or invalid');
+        const errorMsg = result.message || 'Email already subscribed or invalid';
+        setNewsletterMessage(errorMsg);
+        toast.error(errorMsg, toastConfig);
       }
     } catch (error) {
       console.error('Error subscribing:', error);
-      setNewsletterMessage('Network error. Please try again.');
+      const errorMsg = 'Network error. Please try again.';
+      setNewsletterMessage(errorMsg);
+      toast.error(errorMsg, toastConfig);
     } finally {
       setNewsletterSubmitting(false);
     }
   };
 
-  // Submit feedback with validation
+  // Submit feedback with validation and toast
   const handleSubmitFeedback = async (e) => {
     e.preventDefault();
     
     if (!feedbackData.name.trim()) {
       setSubmitMessage('Please enter your name');
+      toast.error('Please enter your name', toastConfig);
       return;
     }
     if (feedbackData.text.trim().length < 5) {
       setSubmitMessage('Please write at least 5 characters for your feedback');
+      toast.error('Please write at least 5 characters', toastConfig);
       return;
     }
     if (feedbackData.rating < 1 || feedbackData.rating > 5) {
       setSubmitMessage('Please select a rating');
+      toast.error('Please select a rating', toastConfig);
       return;
     }
     
@@ -174,6 +205,7 @@ function Home() {
       if (response.ok && result.success) {
         setSubmitSuccess(true);
         setSubmitMessage(result.message);
+        toast.success(result.message, toastConfig);
         setFeedbackData({
           name: '',
           role: '',
@@ -187,16 +219,15 @@ function Home() {
           setSubmitMessage('');
         }, 3000);
       } else {
-        if (result.errors) {
-          const errors = Object.values(result.errors).flat();
-          setSubmitMessage(errors.join(', '));
-        } else {
-          setSubmitMessage(result.message || 'Something went wrong. Please try again.');
-        }
+        const errorMsg = result.message || 'Something went wrong. Please try again.';
+        setSubmitMessage(errorMsg);
+        toast.error(errorMsg, toastConfig);
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);
-      setSubmitMessage('Network error. Please try again.');
+      const errorMsg = 'Network error. Please try again.';
+      setSubmitMessage(errorMsg);
+      toast.error(errorMsg, toastConfig);
     } finally {
       setSubmitting(false);
     }
@@ -280,6 +311,7 @@ function Home() {
           <div className="text-white text-xl">Loading...</div>
         </div>
         <Footer />
+        <ToastContainer />
       </div>
     );
   }
@@ -300,7 +332,7 @@ function Home() {
     <div className="min-h-screen bg-black">
       <Navbar />
 
-      {/* Hero Slider - Fixed Banner Images */}
+      {/* Hero Slider - Banner text is already white */}
       <section className="relative h-screen overflow-hidden">
         {displayBanners.map((banner, index) => (
           <div
@@ -309,40 +341,31 @@ function Home() {
               index === currentBanner ? 'opacity-100 z-10' : 'opacity-0 z-0'
             }`}
           >
-            {/* Background Image - Properly sized */}
             <div className="absolute inset-0 w-full h-full">
               <img
                 src={banner.image}
                 alt={banner.title}
                 className="w-full h-full object-cover object-center"
-                style={{
-                  objectFit: 'cover',
-                  objectPosition: 'center center'
-                }}
                 onError={(e) => {
-                  console.error('Image failed to load:', banner.image);
                   e.target.style.display = 'none';
                 }}
               />
             </div>
-            {/* Dark Overlay */}
             <div className="absolute inset-0 bg-black/40 z-10" />
-            {/* Content */}
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center text-center px-4">
-              <h1 className="animate-fadeInUp text-white text-5xl md:text-7xl font-bold mb-4 tracking-wider drop-shadow-lg">
+              <h1 className={`${showAnimation ? 'animate-fadeInUp' : 'opacity-100'} text-5xl md:text-7xl font-bold mb-4 tracking-wider drop-shadow-lg`} style={{ color: 'white' }}>
                 {banner.title}
               </h1>
-              <p className="animate-fadeInUp animation-delay-200 text-white text-xl md:text-2xl max-w-2xl mb-8 drop-shadow">
+              <p className={`${showAnimation ? 'animate-fadeInUp animation-delay-200' : 'opacity-100'} text-xl md:text-2xl max-w-2xl mb-8 drop-shadow`} style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
                 {banner.subtitle}
               </p>
-              <button className="animate-fadeInUp animation-delay-400 bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 transition-all duration-300 hover:bg-gray-100">
+              <button className={`${showAnimation ? 'animate-fadeInUp animation-delay-400' : 'opacity-100'} bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 transition-all duration-300 hover:bg-gray-100`}>
                 {banner.button_text || 'Shop Now'}
               </button>
             </div>
           </div>
         ))}
         
-        {/* Slider Controls */}
         {displayBanners.length > 0 && (
           <>
             <button 
@@ -362,7 +385,6 @@ function Home() {
               </svg>
             </button>
             
-            {/* Dots */}
             <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30 flex gap-2">
               {displayBanners.map((_, index) => (
                 <button
@@ -378,7 +400,7 @@ function Home() {
         )}
       </section>
 
-      {/* Bestsellers */}
+      {/* Bestsellers - Using BestsellerCard */}
       <section className="py-20 px-4 max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">Bestsellers</h2>
@@ -387,12 +409,12 @@ function Home() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {bestsellers.slice(0, 4).map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <BestsellerCard key={product.id} product={product} />
           ))}
         </div>
       </section>
 
-      {/* Solo Banner - Fixed */}
+      {/* Solo Banner */}
       {soloBanner && (
         <section className="relative py-24 px-4 overflow-hidden min-h-[500px] flex items-center justify-center">
           <div className="absolute inset-0">
@@ -401,12 +423,7 @@ function Home() {
                 src={soloBanner.image} 
                 alt={soloBanner.title} 
                 className="w-full h-full object-cover object-center"
-                style={{
-                  objectFit: 'cover',
-                  objectPosition: 'center center'
-                }}
                 onError={(e) => {
-                  console.error('Solo banner image failed to load:', soloBanner.image);
                   e.target.style.display = 'none';
                 }}
               />
@@ -414,8 +431,8 @@ function Home() {
             <div className="absolute inset-0 bg-black/60" />
           </div>
           <div className="relative z-10 text-center max-w-4xl mx-auto">
-            <h2 className="text-white text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">{soloBanner.title}</h2>
-            <p className="text-white/80 text-lg mb-8 drop-shadow">{soloBanner.subtitle}</p>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg" style={{ color: 'white' }}>{soloBanner.title}</h2>
+            <p className="text-lg mb-8 drop-shadow" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>{soloBanner.subtitle}</p>
             <button className="bg-white text-black px-8 py-3 rounded-full font-semibold hover:scale-105 transition-all duration-300">
               {soloBanner.button_text || 'Discover Collection'}
             </button>
@@ -423,7 +440,7 @@ function Home() {
         </section>
       )}
 
-      {/* New Arrivals */}
+      {/* New Arrivals - Using NewArrivalCard */}
       <section className="py-20 px-4 max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">New Arrivals</h2>
@@ -432,7 +449,7 @@ function Home() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {newArrivals.slice(0, 4).map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <NewArrivalCard key={product.id} product={product} />
           ))}
         </div>
       </section>
@@ -495,7 +512,6 @@ function Home() {
           )}
         </div>
 
-        {/* Add Your Feedback Button */}
         <div className="text-center mt-12">
           <button
             onClick={() => setShowFeedbackModal(true)}
@@ -628,12 +644,7 @@ function Home() {
                     className="w-full px-4 py-2 rounded-xl bg-gray-800 text-white border border-white/10 focus:border-white/30 focus:outline-none resize-none"
                     placeholder="Share your experience with our products... (minimum 5 characters)"
                   />
-                  <p className="text-white/30 text-xs mt-1">Minimum 5 characters required</p>
                 </div>
-
-                {submitMessage && !submitSuccess && (
-                  <p className="text-red-400 text-sm text-center">{submitMessage}</p>
-                )}
 
                 <button
                   type="submit"
@@ -649,6 +660,7 @@ function Home() {
       )}
 
       <Footer />
+      <ToastContainer />
     </div>
   );
 }

@@ -20,7 +20,7 @@ const toastConfig = {
   theme: "dark",
 };
 
-function ProductDetail() {
+function NewArrivalDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -36,12 +36,12 @@ function ProductDetail() {
   const fetchProduct = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/product/${id}`);
+      const response = await fetch(`${API_URL}/new-arrival/${id}`);
       
       if (!response.ok) {
         if (response.status === 404) {
           toast.error('Product not found!', toastConfig);
-          navigate('/shop');
+          navigate('/');
           return;
         }
         throw new Error(`HTTP ${response.status}`);
@@ -53,16 +53,17 @@ function ProductDetail() {
         const productData = {
           ...result.data,
           image: result.data.image ? `${BASE_URL}${result.data.image}` : null,
+          hover_image: result.data.hover_image ? `${BASE_URL}${result.data.hover_image}` : null,
         };
         setProduct(productData);
       } else {
         toast.error(result.message || 'Product not found!', toastConfig);
-        navigate('/shop');
+        navigate('/');
       }
     } catch (error) {
       console.error('Error fetching product:', error);
       toast.error('Failed to load product details!', toastConfig);
-      navigate('/shop');
+      navigate('/');
     } finally {
       setLoading(false);
     }
@@ -145,10 +146,10 @@ function ProductDetail() {
         <div className="flex flex-col items-center justify-center h-screen">
           <div className="text-white text-xl mb-4">Product not found</div>
           <button 
-            onClick={() => navigate('/shop')}
-            className="px-6 py-2 bg-white text-black rounded-lg font-semibold"
+            onClick={() => navigate('/')}
+            className="px-6 py-2 bg-white text-black rounded-lg font-semibold hover:bg-gray-200 transition-all"
           >
-            Back to Shop
+            Back to Home
           </button>
         </div>
         <Footer />
@@ -163,7 +164,7 @@ function ProductDetail() {
 
       <section className="py-12 px-4 max-w-7xl mx-auto">
         <button
-          onClick={() => navigate('/shop')}
+          onClick={() => navigate(-1)}
           className="mb-6 flex items-center gap-2 text-white/60 hover:text-white transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,7 +174,7 @@ function ProductDetail() {
         </button>
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Left - Main Image Only */}
+          {/* Left - Product Image */}
           <div>
             <div className="rounded-2xl overflow-hidden bg-gray-900">
               <img
@@ -203,7 +204,7 @@ function ProductDetail() {
               )}
             </div>
 
-            {/* Simple Price - No cut price, no discount */}
+            {/* Simple Price - No cut price */}
             <div className="mb-6">
               <span className="text-3xl font-bold text-white">${product.price}</span>
             </div>
@@ -228,7 +229,7 @@ function ProductDetail() {
               </div>
             )}
 
-            {/* Quantity */}
+            {/* Quantity Selector */}
             <div className="flex items-center gap-4 mb-6">
               <span className="text-white">Quantity:</span>
               <div className="flex items-center gap-3">
@@ -248,7 +249,7 @@ function ProductDetail() {
               </div>
             </div>
 
-            {/* Buttons */}
+            {/* Action Buttons */}
             <div className="flex flex-wrap gap-4">
               <button
                 onClick={handleAddToCart}
@@ -264,7 +265,12 @@ function ProductDetail() {
               </button>
               <button
                 onClick={handleWishlist}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${isInWishlist(product.id) ? 'bg-white text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all hover:scale-105 ${
+                  isInWishlist(product.id) 
+                    ? 'bg-white text-black' 
+                    : 'bg-white/10 text-white hover:bg-white/20'
+                }`}
+                title={isInWishlist(product.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
               >
                 <svg className="w-5 h-5" fill={isInWishlist(product.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -285,4 +291,4 @@ function ProductDetail() {
   );
 }
 
-export default ProductDetail;
+export default NewArrivalDetail;

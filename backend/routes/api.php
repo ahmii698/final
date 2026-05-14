@@ -10,6 +10,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PaymentController;
 
 // ===================== TESTIMONIAL SUBMIT ROUTE =====================
 Route::post('/submit-testimonial', [AdminController::class, 'submitTestimonial']);
@@ -70,10 +71,14 @@ Route::post('/contact-submit', [ContactController::class, 'submitContact']);
 Route::get('/contact-submissions', [ContactController::class, 'getSubmissions']);
 Route::put('/contact-submissions/{id}/read', [ContactController::class, 'markAsRead']);
 
-// ===================== ORDER TRACKING API =====================
+// ===================== ORDER TRACKING & CREATE ORDER API =====================
 Route::get('/track-order/{orderId}', [OrderController::class, 'trackOrder']);
 Route::post('/create-order', [OrderController::class, 'createOrder']);
+Route::post('/orders', [OrderController::class, 'createOrder']);
 Route::get('/my-orders', [OrderController::class, 'getUserOrders'])->middleware('auth:sanctum');
+
+// ===================== PAYMENT PROOF ROUTES =====================
+Route::post('/upload-payment-proof', [PaymentController::class, 'uploadPaymentProof']);
 
 // ===================== ADMIN AUTH ROUTES =====================
 Route::post('/admin/login', [AdminController::class, 'login']);
@@ -179,6 +184,11 @@ Route::prefix('admin')->group(function () {
     Route::get('/blog-featured', [AdminController::class, 'getBlogFeatured']);
     Route::post('/blog-featured/{id}', [AdminController::class, 'updateBlogFeatured']);
     Route::put('/blog-featured/{id}', [AdminController::class, 'updateBlogFeatured']);
+    
+    // ===================== PAYMENT PROOFS (ADMIN) =====================
+    Route::get('/payment-proofs', [AdminController::class, 'getPaymentProofs']);
+    Route::put('/payment-proofs/{id}/approve', [AdminController::class, 'approvePayment']);
+    Route::put('/payment-proofs/{id}/reject', [AdminController::class, 'rejectPayment']);
 });
 
 // ===================== FRONTEND HERO API ROUTES =====================
@@ -220,6 +230,23 @@ Route::get('/shop-banner', function() {
     $banner = DB::table('home_banners')->where('active', 1)->orderBy('order')->first();
     if ($banner) $banner->image = $banner->image;
     return response()->json(['success' => true, 'data' => $banner]);
+});
+
+// ===================== BESTSELLER & NEW ARRIVAL DETAIL ROUTES =====================
+Route::get('/bestseller/{id}', function($id) {
+    $product = DB::table('bestseller_products')->where('id', $id)->first();
+    if (!$product) {
+        return response()->json(['success' => false, 'message' => 'Product not found'], 404);
+    }
+    return response()->json(['success' => true, 'data' => $product]);
+});
+
+Route::get('/new-arrival/{id}', function($id) {
+    $product = DB::table('new_arrival_products')->where('id', $id)->first();
+    if (!$product) {
+        return response()->json(['success' => false, 'message' => 'Product not found'], 404);
+    }
+    return response()->json(['success' => true, 'data' => $product]);
 });
 
 // ===================== FALLBACK =====================

@@ -7,12 +7,20 @@ import App from './App';
 import About from './pages/About';
 import Shop from './pages/Shop';
 import Blog from './pages/Blog';
+import BlogDetail from './pages/BlogDetail';
 import Contact from './pages/Contact';
 import OrderTracking from './pages/OrderTracking';
 import Auth from './pages/Auth';
 import Cart from './pages/Cart';
 import Wishlist from './pages/Wishlist';
 import ProductDetail from './pages/ProductDetail';
+import Checkout from './pages/Checkout';
+import OrderSuccess from './pages/OrderSuccess';
+import Payment from './pages/Payment';
+import PaymentPending from './pages/PaymentPending';
+// Bestseller & New Arrival Imports
+import BestsellerDetail from './pages/BestsellerDetail';
+import NewArrivalDetail from './pages/NewArrivalDetail';
 // Admin Imports
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminForgotPassword from './pages/Admin/AdminForgotPassword';
@@ -29,8 +37,9 @@ import AdminAboutTeam from './pages/Admin/AdminAboutTeam';
 import AdminAboutStatistics from './pages/Admin/AdminAboutStatistics';
 import AdminAboutValues from './pages/Admin/AdminAboutValues';
 import AdminBlogPosts from './pages/Admin/AdminBlogPosts';
-import AdminBlogFeatured from './pages/Admin/AdminBlogFeatured';  // 👈 ADD THIS
+import AdminBlogFeatured from './pages/Admin/AdminBlogFeatured';
 import AdminContactSubmissions from './pages/Admin/AdminContactSubmissions';
+import AdminPaymentProofs from './pages/Admin/AdminPaymentProofs';
 import AdminShopHero from './pages/Admin/AdminShopHero';
 import AdminBlogHero from './pages/Admin/AdminBlogHero';
 import AdminContactHero from './pages/Admin/AdminContactHero';
@@ -51,12 +60,21 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/about" element={<About />} />
             <Route path="/shop" element={<Shop />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogDetail />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/track-order" element={<OrderTracking />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/product/:id" element={<ProductDetail />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/payment-pending" element={<PaymentPending />} />
+            
+            {/* Bestseller & New Arrival Routes */}
+            <Route path="/bestseller/:id" element={<BestsellerDetail />} />
+            <Route path="/new-arrival/:id" element={<NewArrivalDetail />} />
             
             {/* Admin Routes */}
             <Route path="/admin" element={<AdminLogin />} />
@@ -74,8 +92,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             <Route path="/admin/about-statistics" element={<AdminAboutStatistics />} />
             <Route path="/admin/about-values" element={<AdminAboutValues />} />
             <Route path="/admin/blog-posts" element={<AdminBlogPosts />} />
-            <Route path="/admin/blog-featured" element={<AdminBlogFeatured />} />  {/* 👈 ADD THIS */}
+            <Route path="/admin/blog-featured" element={<AdminBlogFeatured />} />
             <Route path="/admin/contact-submissions" element={<AdminContactSubmissions />} />
+            <Route path="/admin/payment-proofs" element={<AdminPaymentProofs />} />
             <Route path="/admin/shop-hero" element={<AdminShopHero />} />
             <Route path="/admin/blog-hero" element={<AdminBlogHero />} />
             <Route path="/admin/contact-hero" element={<AdminContactHero />} />
