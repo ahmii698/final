@@ -1,11 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import ProductModal from '../components/common/ProductModal';
 import { useCart } from '../context/CartContext';
 
 const BASE_URL = 'http://127.0.0.1:8000';
+
+const toastConfig = {
+  position: "bottom-right",
+  autoClose: 3000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
 
 function Wishlist() {
   const { wishlistItems, removeFromWishlist, addToCart, isInCart } = useCart();
@@ -24,9 +36,21 @@ function Wishlist() {
 
   const handleAddToCart = (product, e) => {
     e.stopPropagation();
-    addToCart(product);  // Add to cart (will increase quantity if already in cart)
-    removeFromWishlist(product.id);  // Remove from wishlist
-    alert(`${product.name} added to cart and removed from wishlist!`);
+    
+    // Add to cart
+    addToCart(product);
+    
+    // Remove from wishlist
+    removeFromWishlist(product.id);
+    
+    // Show toast notification
+    toast.success(`${product.name} moved to cart!`, toastConfig);
+  };
+
+  const handleRemoveFromWishlist = (product, e) => {
+    e.stopPropagation();
+    removeFromWishlist(product.id);
+    toast.info(`${product.name} removed from wishlist`, toastConfig);
   };
 
   if (!mounted) return null;
@@ -76,23 +100,22 @@ function Wishlist() {
                       alt={product.name} 
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/300x300?text=No+Image';
+                        e.target.src = 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'300\' height=\'300\' viewBox=\'0 0 300 300\'%3E%3Crect width=\'300\' height=\'300\' fill=\'%23333333\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23666666\' font-size=\'14\'%3ENo Image%3C/text%3E%3C/svg%3E';
                       }}
                     />
                     
-                    {/* Already in Cart Badge - Just for info, doesn't block adding */}
+                    {/* Already in Cart Badge */}
                     {alreadyInCart && (
-                      <div className="absolute top-3 left-3 bg-green-600 text-white text-xs font-bold px-2 py-1 rounded z-10">
-                        Already in Cart
+                      <div className="absolute top-3 left-3 bg-white/20 backdrop-blur-sm text-white text-xs font-bold px-2 py-1 rounded z-10">
+                        In Cart
                       </div>
                     )}
                     
+                    {/* Remove from Wishlist Button */}
                     <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        removeFromWishlist(product.id); 
-                      }} 
-                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-red-500 transition-colors"
+                      onClick={(e) => handleRemoveFromWishlist(product, e)} 
+                      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center hover:bg-red-500 transition-all hover:scale-110"
+                      title="Remove from wishlist"
                     >
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -103,7 +126,7 @@ function Wishlist() {
                     <h3 className="text-white font-semibold mb-1 line-clamp-1">{product.name}</h3>
                     <div className="flex items-center justify-between">
                       <div>
-                        {product.old_price || product.oldPrice ? (
+                        {(product.old_price || product.oldPrice) ? (
                           <>
                             <span className="text-white font-bold">${product.price}</span>
                             <span className="text-white/40 line-through text-sm ml-2">${product.old_price || product.oldPrice}</span>
@@ -118,10 +141,10 @@ function Wishlist() {
                       </div>
                     </div>
                     
-                    {/* Add to Cart Button - Always enabled, adds to cart and removes from wishlist */}
+                    {/* Add to Cart Button */}
                     <button 
                       onClick={(e) => handleAddToCart(product, e)} 
-                      className="w-full mt-3 py-2 bg-white text-black rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all"
+                      className="w-full mt-3 py-2 bg-white text-black rounded-lg text-sm font-semibold hover:bg-gray-200 transition-all hover:scale-105"
                     >
                       {alreadyInCart ? 'Add Another +' : 'Add to Cart'}
                     </button>
@@ -143,6 +166,7 @@ function Wishlist() {
       )}
 
       <Footer />
+      <ToastContainer />
     </div>
   );
 }

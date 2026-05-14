@@ -1,9 +1,21 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 
 const API_URL = 'http://127.0.0.1:8000/api';
+
+const toastConfig = {
+  position: "bottom-right",
+  autoClose: 4000,
+  hideProgressBar: false,
+  closeOnClick: true,
+  pauseOnHover: true,
+  draggable: true,
+  theme: "dark",
+};
 
 function PaymentPending() {
   const location = useLocation();
@@ -15,14 +27,25 @@ function PaymentPending() {
   const handleScreenshotChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size should be less than 5MB', toastConfig);
+        return;
+      }
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file (JPG, PNG)', toastConfig);
+        return;
+      }
       setScreenshot(file);
+      toast.success('File selected successfully!', toastConfig);
     }
   };
 
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!screenshot) {
-      alert('Please select a screenshot first');
+      toast.error('Please select a screenshot first', toastConfig);
       return;
     }
 
@@ -44,13 +67,13 @@ function PaymentPending() {
       
       if (result.success) {
         setUploaded(true);
-        alert('Payment proof uploaded successfully! Admin will review it.');
+        toast.success('Payment proof uploaded successfully! Admin will review it.', toastConfig);
       } else {
-        alert(result.message || 'Upload failed');
+        toast.error(result.message || 'Upload failed. Please try again.', toastConfig);
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Network error. Please try again.');
+      toast.error('Network error. Please try again.', toastConfig);
     } finally {
       setUploading(false);
     }
@@ -88,6 +111,7 @@ function PaymentPending() {
           </div>
         </section>
         <Footer />
+        <ToastContainer />
       </div>
     );
   }
@@ -207,6 +231,7 @@ function PaymentPending() {
       </section>
 
       <Footer />
+      <ToastContainer />
     </div>
   );
 }
