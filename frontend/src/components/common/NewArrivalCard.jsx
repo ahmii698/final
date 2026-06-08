@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useCart } from '../../context/CartContext';  // <-- ../../ lagaya
-import { useAuth } from '../../context/AuthContext';  
+import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+
 const BASE_URL = 'http://127.0.0.1:8000';
 
 const toastConfig = {
@@ -32,8 +33,7 @@ function NewArrivalCard({ product }) {
   }
 
   const handleQuickView = () => {
-    // Use new arrival ID, not product ID
-    navigate(`/new-arrival/${product.id}`);
+    navigate(`/product/${product.id}`);
   };
 
   const requireLogin = () => {
@@ -49,20 +49,16 @@ function NewArrivalCard({ product }) {
       return;
     }
     
-    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const existingItem = cart.find(item => item.id === product.id);
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: parseFloat(product.price),
+      image: product.image,
+      quantity: 1
+    };
     
-    if (existingItem) {
-      existingItem.quantity = (existingItem.quantity || 1) + 1;
-      localStorage.setItem('cart', JSON.stringify(cart));
-      toast.success(`${product.name} quantity increased!`, toastConfig);
-    } else {
-      const cartItem = { ...product, quantity: 1 };
-      cart.push(cartItem);
-      localStorage.setItem('cart', JSON.stringify(cart));
-      addToCart(cartItem);
-      toast.success(`${product.name} added to cart!`, toastConfig);
-    }
+    addToCart(cartItem);
+    toast.success(`${product.name} added to cart!`, toastConfig);
   };
 
   const handleWishlist = (e) => {
@@ -97,6 +93,8 @@ function NewArrivalCard({ product }) {
           }}
         />
         
+        {/* ❌ NEW BADGE HATA DIYA */}
+        
         {isHovered && (
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center gap-3 z-20">
             <button 
@@ -114,7 +112,7 @@ function NewArrivalCard({ product }) {
               onClick={handleWishlist} 
               className={`w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110 ${
                 isInWishlist(product.id) 
-                  ? 'bg-white text-black' 
+                  ? 'bg-red-500 text-white' 
                   : 'bg-white/20 hover:bg-white/30 text-white'
               }`}
               title={isInWishlist(product.id) ? 'Remove from Wishlist' : 'Add to Wishlist'}
@@ -124,13 +122,14 @@ function NewArrivalCard({ product }) {
               </svg>
             </button>
             
+            {/* ✅ CART ICON - Shopping Cart wala */}
             <button 
               onClick={handleAddToCart} 
               className="w-10 h-10 bg-white text-black rounded-full flex items-center justify-center hover:bg-gray-200 transition-all hover:scale-110"
               title="Add to Cart"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6M17 13l1.5 6M9 21h6M12 15v6" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6M17 13l1.5 6M9 21h6" />
               </svg>
             </button>
           </div>
@@ -143,7 +142,7 @@ function NewArrivalCard({ product }) {
             {product.name}
           </h3>
           <div className="flex items-center justify-between">
-            <span className="text-white font-bold text-lg">${product.price}</span>
+            <span className="text-yellow-400 font-bold text-xl">${parseFloat(product.price).toFixed(2)}</span>
             {product.rating && (
               <div className="flex items-center gap-1">
                 <span className="text-yellow-500 text-sm">★</span>

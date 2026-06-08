@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -22,17 +22,48 @@ function PaymentPending() {
   const [screenshot, setScreenshot] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [uploaded, setUploaded] = useState(false);
-  const [orderId, setOrderId] = useState(location.state?.orderId || null);
+  
+  // ✅ Get full order_id from location state
+  const [orderId, setOrderId] = useState(() => {
+    // First try location state - get the actual order_id (not numeric id)
+    let id = location.state?.orderId;
+    
+    // If orderId is numeric, try to get from localStorage
+    if (id && !isNaN(parseInt(id))) {
+      const savedOrderId = localStorage.getItem('lastOrderId');
+      if (savedOrderId && !savedOrderId.startsWith('TEMP-')) {
+        return savedOrderId;
+      }
+    }
+    
+    if (id && !id.startsWith('TEMP-')) {
+      return id;
+    }
+    
+    // Then try localStorage
+    const savedOrderId = localStorage.getItem('lastOrderId');
+    if (savedOrderId && !savedOrderId.startsWith('TEMP-')) {
+      return savedOrderId;
+    }
+    
+    // Finally generate a temporary ID
+    return 'TEMP-' + Date.now();
+  });
+
+  // ✅ Save FULL order ID to localStorage
+  useEffect(() => {
+    if (orderId && typeof orderId === 'string' && !orderId.startsWith('TEMP-') && !orderId.startsWith('pending-')) {
+      localStorage.setItem('lastOrderId', orderId);
+    }
+  }, [orderId]);
 
   const handleScreenshotChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('File size should be less than 5MB', toastConfig);
         return;
       }
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         toast.error('Please upload an image file (JPG, PNG)', toastConfig);
         return;
@@ -53,7 +84,7 @@ function PaymentPending() {
     
     const formData = new FormData();
     formData.append('screenshot', screenshot);
-    if (orderId) {
+    if (orderId && typeof orderId === 'string' && !orderId.startsWith('TEMP-')) {
       formData.append('order_id', orderId);
     }
 
@@ -90,8 +121,17 @@ function PaymentPending() {
             </svg>
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">Thank You!</h1>
+          
+          {/* ✅ Show full Order ID prominently */}
+          {orderId && typeof orderId === 'string' && !orderId.startsWith('TEMP-') && (
+            <div className="bg-yellow-500/20 border border-yellow-500/40 rounded-lg p-3 mb-6 inline-block">
+              <p className="text-yellow-400 text-sm">Order ID</p>
+              <p className="text-white font-bold text-xl">{orderId}</p>
+            </div>
+          )}
+          
           <p className="text-white/60 mb-8">
-            Your payment proof has been submitted successfully. Our admin will review it and approve your order within 24 hours.
+            Your payment proof has been submitted successfully. Admin will review it and approve your order within 24 hours.
           </p>
           <div className="bg-gray-900 rounded-xl p-6 mb-8 text-left">
             <h3 className="text-white font-semibold mb-3">What's Next?</h3>
@@ -102,7 +142,7 @@ function PaymentPending() {
             </ul>
           </div>
           <div className="flex gap-4 justify-center">
-            <Link to="/track-order" className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all">
+            <Link to={`/track-order?orderId=${orderId}`} className="px-6 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all">
               Track Order
             </Link>
             <Link to="/shop" className="px-6 py-3 bg-white/10 text-white rounded-xl font-semibold hover:bg-white/20 transition-all">
@@ -144,13 +184,16 @@ function PaymentPending() {
             <p className="text-white/50 text-sm">Please upload a screenshot of your payment confirmation</p>
           </div>
 
-          {orderId && (
-            <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
-              <p className="text-green-400 text-sm">
-                Order ID: <span className="font-bold">{orderId}</span>
-              </p>
-            </div>
-          )}
+          {/* ✅ Show FULL Order ID */}
+          <div className="mb-4 p-4 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border border-green-500/40 rounded-lg text-center">
+            <p className="text-green-400 text-sm uppercase tracking-wide">Order Reference</p>
+            <p className="text-white font-bold text-2xl mt-1 tracking-wider">
+              {orderId && !orderId.startsWith('TEMP-') ? orderId : 'Processing...'}
+            </p>
+            <p className="text-white/40 text-xs mt-2">
+              Use this Order ID to track your order
+            </p>
+          </div>
 
           <div className="mb-6 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl">
             <h3 className="text-blue-400 font-semibold mb-2 flex items-center gap-2">

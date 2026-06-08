@@ -12,9 +12,7 @@ function Payment() {
   const location = useLocation();
   const { cartItems, clearCart } = useCart();
   const [loading, setLoading] = useState(false);
-  const [paymentConfirmed, setPaymentConfirmed] = useState(false);
   const [orderData, setOrderData] = useState(null);
-  const [createdOrderId, setCreatedOrderId] = useState(null);
 
   useEffect(() => {
     if (location.state?.orderData) {
@@ -24,10 +22,21 @@ function Payment() {
     }
   }, [location]);
 
+  // ✅ Function to generate proper Order ID (LXE format)
+  const generateOrderId = (numericId) => {
+    // If we already have a proper LXE order ID from backend
+    if (numericId && typeof numericId === 'string' && numericId.startsWith('LXE')) {
+      return numericId;
+    }
+    // Generate new LXE order ID
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 10000);
+    return `LXE${timestamp}${random}`;
+  };
+
   const handlePaymentConfirm = async (e) => {
     e.preventDefault();
     
-    // First create order
     setLoading(true);
     try {
       const orderResponse = await fetch(`${API_URL}/orders`, {
@@ -41,9 +50,29 @@ function Payment() {
       const orderResult = await orderResponse.json();
 
       if (orderResult.success) {
-        setCreatedOrderId(orderResult.data.id);
         clearCart();
-        setPaymentConfirmed(true);
+        
+        // ✅ Generate proper Order ID instead of using numeric id
+        let actualOrderId;
+        
+        // Try to get order_id from response first
+        if (orderResult.data.order_id && orderResult.data.order_id.startsWith('LXE')) {
+          actualOrderId = orderResult.data.order_id;
+        } 
+        // If backend only sent numeric id, generate LXE format
+        else if (orderResult.data.id) {
+          actualOrderId = generateOrderId(orderResult.data.id);
+        }
+        // Fallback
+        else {
+          actualOrderId = generateOrderId();
+        }
+        
+        // ✅ Save to localStorage for tracking
+        localStorage.setItem('lastOrderId', actualOrderId);
+        
+        // Navigate with proper Order ID
+        navigate('/payment-pending', { state: { orderId: actualOrderId } });
       } else {
         alert(orderResult.message || 'Order creation failed');
       }
@@ -55,41 +84,11 @@ function Payment() {
     }
   };
 
-  const handleFinalSubmit = () => {
-    // Navigate to payment pending with order ID
-    navigate('/payment-pending', { state: { orderId: createdOrderId } });
-  };
-
   const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const total = subtotal;
 
   if (!orderData) {
     return null;
-  }
-
-  if (paymentConfirmed) {
-    return (
-      <div className="min-h-screen bg-black">
-        <Navbar />
-        <section className="py-20 px-4 max-w-2xl mx-auto text-center">
-          <div className="bg-green-500/20 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">Payment Successful!</h1>
-          <p className="text-white/60 mb-8">Your payment has been confirmed. Click below to complete your order.</p>
-          <button
-            onClick={handleFinalSubmit}
-            disabled={loading}
-            className="px-8 py-3 bg-white text-black rounded-xl font-semibold hover:bg-gray-200 transition-all disabled:opacity-50"
-          >
-            Complete Order
-          </button>
-        </section>
-        <Footer />
-      </div>
-    );
   }
 
   return (

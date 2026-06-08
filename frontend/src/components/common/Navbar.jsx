@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
-import { useAuth } from '../../context/AuthContext';  // 👈 ADD THIS
+import { useAuth } from '../../context/AuthContext';
+import logo from '../../assets/logo.png';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
   const { cartCount, wishlistCount } = useCart();
-  const { isAuthenticated, user, logout } = useAuth();  // 👈 ADD THIS
+  const { isAuthenticated, user, logout } = useAuth();
 
   // Load theme from localStorage on mount
   useEffect(() => {
@@ -50,13 +51,13 @@ function Navbar() {
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <Link to="/" className="text-2xl font-bold tracking-wider">
-            <span className={`transition-colors duration-300 ${
-              isDarkMode ? 'text-white' : 'text-gray-900'
-            }`}>
-              LUXE
-            </span>
+          {/* Logo with Image - Bada Size */}
+          <Link to="/" className="flex items-center gap-2">
+            <img 
+              src={logo} 
+              alt="LUXE Logo" 
+              className="h-12 w-auto object-contain"  // 👈 h-8 se badal kar h-12 kiya
+            />
           </Link>
 
           {/* Desktop Menu */}
